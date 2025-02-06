@@ -8,15 +8,14 @@
     <name>smart-flow</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="89780012@qq.com" url="https://gitee.com/89780012/smart-flow">xiaonuo</vendor>
+    <vendor email="89780012@qq.com" url="https://github.com/89780012/smart-flow-plugin">xiaonuo</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-      流程编排新势力,重新定义开发新规则。
-  ]]></description>
-
+    This plugin provides advanced workflow orchestration capabilities, enabling efficient and flexible business process management.
+]]></description>
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
