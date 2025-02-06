@@ -33,7 +33,7 @@ public class SidebarPanel extends JPanel {
     private JToggleButton selectedButton;
     private ResizablePanel resizablePanel;
 
-    public SidebarPanel(JPanel parentPanel, Map<String,Object> propertyMap, VisualLayoutPanel visualLayoutPanel ,JPanel centerPanel, VirtualFile file) {
+    public SidebarPanel(Map<String,Object> propertyMap, VisualLayoutPanel visualLayoutPanel ,JPanel centerPanel, VirtualFile file) {
         this.file = file;
         this.centerPanel = centerPanel;
         this.propertyMap = propertyMap;

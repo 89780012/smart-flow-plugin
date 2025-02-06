@@ -136,10 +136,6 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         PluginCache.project = project;
         loadComponentConfig(); // 加载组件配置
 
-        // 创建画布区
-        VisualLayoutPanel vPanel = new VisualLayoutPanel(propertyMap, file, project);
-        JPanel viewPortPanel = vPanel.getLayeredPane();
-
         mainPanel.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -153,15 +149,18 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         leftComponentTree = createLeftComponentTree();
         centerPanel.add(leftComponentTree, BorderLayout.WEST);
         // 中间画布
+        VisualLayoutPanel vPanel = new VisualLayoutPanel(propertyMap, file, project);
+        JPanel viewPortPanel = vPanel.getLayeredPane();
         centerPanel.add(viewPortPanel, BorderLayout.CENTER);
 
+        //左侧tab页
         JPanel leftTabPanel = createLeftTabPanel();
         mainPanel.add(leftTabPanel, BorderLayout.WEST);
 
         //左侧组件树域和画布区域在中间
         mainPanel.add(centerPanel, BorderLayout.CENTER);
         // 右侧侧边栏
-        sidebarPanel = new SidebarPanel(mainPanel, propertyMap, vPanel,centerPanel,file); // 传入mainPanel作为父面板
+        sidebarPanel = new SidebarPanel(propertyMap, vPanel,centerPanel,file);
 
         // 为mainPanel添加下边框，仿照IDEA风格
         mainPanel.setBorder(BorderFactory.createCompoundBorder(

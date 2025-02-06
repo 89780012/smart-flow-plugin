@@ -122,6 +122,10 @@ public class SourseCodeUtils {
 
             // 从propertyMap获取output配置
             Object outputObj = propertyMap.get("output");
+            if(outputObj == null){
+                appendTextElement(doc, resultsElement, "responseStruct",
+                        String.valueOf(ResponseStructType.STANDARD.getValue()));
+            }
             if (outputObj instanceof ObjectNode) {
                 ObjectNode outputConfig = (ObjectNode) outputObj;
 
@@ -308,6 +312,11 @@ public class SourseCodeUtils {
                     appendTextElement(doc, rootElement, "name", "");
                     appendTextElement(doc, rootElement, "protocol", HttpProtocol.JSON.getValue());
                     appendTextElement(doc, rootElement, "method", HttpMethod.GET.getValue());
+
+                    //增加results标签
+                    appendTextElement(doc, rootElement, "results", "");
+                    Element resultsElement = (Element) rootElement.getElementsByTagName("results").item(0);
+                    appendTextElement(doc, resultsElement, "responseStruct", String.valueOf(ResponseStructType.STANDARD.getValue()));
 
                     propertyMap.put("id", uuid);
                     propertyMap.put("url", "");
