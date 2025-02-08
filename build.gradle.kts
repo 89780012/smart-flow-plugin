@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.smart"
-version = "1.0-SNAPSHOT"
+version = "1.0.4"
 
 repositories {
     maven { url = uri("https://maven.aliyun.com/repository/public") }
@@ -41,7 +41,6 @@ tasks {
     patchPluginXml {
         sinceBuild.set("222")
         untilBuild.set("232.*")
-
     }
 
     signPlugin {
@@ -77,20 +76,11 @@ sourceSets {
 }
 
 dependencies {
-    // 移除 Gson 依赖
-    // implementation("com.google.code.gson:gson:2.8.9")
     // 添加hutool核心包
-    implementation("cn.hutool:hutool-all:5.8.25")  // 使用最新稳定版本
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.12.5")  // 使用最新稳定版本
+    implementation("cn.hutool:hutool-core:5.8.25")      // 核心工具
+    implementation("cn.hutool:hutool-json:5.8.25")      // JSON工具
     implementation("org.commonmark:commonmark:0.24.0")  // 使用最新稳定版本
-    implementation("dev.langchain4j:langchain4j:0.36.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:0.36.0")
     implementation("mysql:mysql-connector-java:8.0.33")
-    // 如果只需要特定模块，也可以单独引入：
-    // implementation 'cn.hutool:hutool-core:5.8.25'      // 核心工具
-    // implementation 'cn.hutool:hutool-json:5.8.25'      // JSON工具
-    // implementation 'cn.hutool:hutool-db:5.8.25'        // 数据库工具
-    // implementation 'cn.hutool:hutool-http:5.8.25'      // HTTP客户端
-    // implementation 'cn.hutool:hutool-crypto:5.8.25'    // 加密解密
-    // implementation("com.vladsch.flexmark:flexmark-all:0.64.0")
+    implementation("org.json:json:20231013")
+
 }

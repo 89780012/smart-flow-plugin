@@ -5,11 +5,8 @@ import com.intellij.openapi.ui.Messages;
 import com.smart.cache.PluginCache;
 import com.smart.settings.SmartPluginSettings;
 import com.smart.settings.SmartPluginSettingsConfigurable;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.chain.Chain;
-import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import com.smart.ai.chat.ChatModel;
+import com.smart.ai.chat.OpenAIChatModel;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -20,7 +17,7 @@ import java.util.regex.Pattern;
 
 public class DatabaseAIService {
 
-    private static ChatLanguageModel chatModel = null;
+    private static ChatModel chatModel = null;
     // SQL生成提示模板
     private static final String SQL_GENERATE_PROMPT = """
             你是一个SQL专家，请根据以下数据库结构和问题生成对应的MySQL查询语句。
@@ -77,7 +74,7 @@ public class DatabaseAIService {
                 apiDomain = SmartPluginSettings.getInstance().getOpenAIBaseUrl() + "/v1";
                 licenseURL =  SmartPluginSettings.getInstance().getOpenAIAuthKey();
                 model = SmartPluginSettings.getInstance().getOpenAIModel();
-                chatModel = OpenAiChatModel.builder()
+                chatModel = OpenAIChatModel.builder()
                         .baseUrl(apiDomain)
                         .apiKey(licenseURL)
                         .modelName(model)
@@ -87,7 +84,7 @@ public class DatabaseAIService {
                         .logResponses(true)
                         .build();
             }else{
-                chatModel = OpenAiChatModel.builder()
+                chatModel = OpenAIChatModel.builder()
                         .baseUrl(apiDomain)
                         .apiKey(licenseURL + "@db")
                         .modelName(model)

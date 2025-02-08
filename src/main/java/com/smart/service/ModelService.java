@@ -1,6 +1,10 @@
 package com.smart.service;
 
-import cn.hutool.http.HttpUtil;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -33,10 +37,29 @@ public final class ModelService {
                 tmpApiKey = SmartPluginSettings.getInstance().getOpenAIAuthKey();
             }
             // 使用Hutool发起HTTP请求
-            String result = HttpUtil.createGet(tmpModelListUrl)
-                    .header("Authorization", "Bearer " + tmpApiKey)
-                    .execute()
-                    .body();
+            String result = "";
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(tmpModelListUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "Bearer " + tmpApiKey);
+
+                // 读取响应
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                    result = response.toString();
+                }
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
             // 解析JSON响应
             JSONObject json = JSONUtil.parseObj(result);
             try{

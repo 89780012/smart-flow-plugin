@@ -28,9 +28,9 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 
-import cn.hutool.http.HttpUtil;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.core.io.FileUtil;
+import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
+import java.io.FileInputStream;
 
 public class ArchiveManager {
     private static final Logger LOG = Logger.getInstance(ArchiveManager.class);
@@ -266,34 +266,100 @@ public class ArchiveManager {
 
             LOG.info("开始发送请求...");
             
-            // 执行上传请求
-            HttpResponse response = HttpUtil.createPost(REMOTE_API_URL)
-                .timeout(60000) // 设置超时时间为60秒
-                .form(formMap)  // 设置表单数据
-                .execute();
+            String boundary = "---------------------------" + System.currentTimeMillis();
+            String LINE_FEED = "\r\n";
             
-            int responseCode = response.getStatus();
-            String responseBody = response.body();
-            
-            LOG.info("服务器响应代码: " + responseCode);
-            LOG.info("服务器响应内容: " + responseBody);
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(REMOTE_API_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(60000); // 设置连接超时
+                conn.setReadTimeout(60000);    // 设置读取超时
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
-            if (!response.isOk()) {
-                throw new IOException("服务器返回非成功状态码: " + responseCode + 
-                                    "\n响应内容: " + responseBody);
+                try (OutputStream outputStream = conn.getOutputStream();
+                     PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true)) {
+
+                    // 添加普通表单字段
+                    for (Map.Entry<String, Object> entry : formMap.entrySet()) {
+                        if (entry.getValue() instanceof File) continue; // 跳过文件字段
+                        writer.append("--" + boundary).append(LINE_FEED);
+                        writer.append("Content-Disposition: form-data; name=\"" + entry.getKey() + "\"")
+                              .append(LINE_FEED);
+                        writer.append("Content-Type: text/plain; charset=UTF-8").append(LINE_FEED);
+                        writer.append(LINE_FEED);
+                        writer.append(String.valueOf(entry.getValue())).append(LINE_FEED);
+                        writer.flush();
+                    }
+
+                    // 添加文件
+                    File uploadFile = (File) formMap.get("file");
+                    writer.append("--" + boundary).append(LINE_FEED);
+                    writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + 
+                                uploadFile.getName() + "\"").append(LINE_FEED);
+                    writer.append("Content-Type: application/octet-stream").append(LINE_FEED);
+                    writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
+                    writer.append(LINE_FEED);
+                    writer.flush();
+
+                    // 写入文件数据
+                    try (FileInputStream inputStream = new FileInputStream(uploadFile)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                        outputStream.flush();
+                    }
+                    
+                    writer.append(LINE_FEED);
+                    writer.append("--" + boundary + "--").append(LINE_FEED);
+                    writer.flush();
+                }
+
+                int responseCode = conn.getResponseCode();
+                String responseBody;
+                
+                // 读取响应
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(
+                            responseCode >= 400 ? conn.getErrorStream() : conn.getInputStream(), 
+                            "UTF-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    responseBody = response.toString();
+                }
+
+                LOG.info("服务器响应代码: " + responseCode);
+                LOG.info("服务器响应内容: " + responseBody);
+
+                if (responseCode >= 400) {
+                    throw new IOException("服务器返回非成功状态码: " + responseCode + 
+                                        "\n响应内容: " + responseBody);
+                }
+
+                // 在EDT线程中显示成功通知
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    Notifications.Bus.notify(new Notification(
+                        "Smart Flow Notifications",
+                        "远程存储成功",
+                        "文件已成功上传到远程服务器",
+                        NotificationType.INFORMATION
+                    ));
+                });
+                
+                LOG.info("文件上传成功完成");
+                
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
-
-            // 在EDT线程中显示成功通知
-            ApplicationManager.getApplication().invokeLater(() -> {
-                Notifications.Bus.notify(new Notification(
-                    "Smart Flow Notifications",
-                    "远程存储成功",
-                    "文件已成功上传到远程服务器",
-                    NotificationType.INFORMATION
-                ));
-            });
-            
-            LOG.info("文件上传成功完成");
             
         } catch (Exception e) {
             LOG.error("文件上传失败", e);
@@ -352,35 +418,4 @@ public class ArchiveManager {
         return remoteEntries;
     }
 
-    public void downloadRemoteArchive(String storedUrl, String targetPath) {
-        try {
-            LOG.info("开始下载文件: " + storedUrl);
-            
-            // 使用hutool下载文件
-            long size = HttpUtil.downloadFile(storedUrl, FileUtil.file(targetPath), 60000);
-            
-            LOG.info("文件下载完成，大小: " + size + " bytes");
-
-            // 通知下载成功
-            ApplicationManager.getApplication().invokeLater(() -> {
-                Notifications.Bus.notify(new Notification(
-                    "Smart Flow Notifications",
-                    "下载成功",
-                    "远程存档已成功下载到本地",
-                    NotificationType.INFORMATION
-                ));
-            });
-
-        } catch (Exception e) {
-            LOG.error("Failed to download remote archive", e);
-            ApplicationManager.getApplication().invokeLater(() -> {
-                Notifications.Bus.notify(new Notification(
-                    "Smart Flow Notifications",
-                    "下载失败",
-                    "下载远程存档失败: " + e.getMessage(),
-                    NotificationType.ERROR
-                ));
-            });
-        }
-    }
 }

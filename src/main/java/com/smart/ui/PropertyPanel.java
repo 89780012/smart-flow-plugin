@@ -29,20 +29,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.LoadingDecorator;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.smart.settings.SmartPluginSettings;
 
 import javax.swing.SwingWorker;
+import java.util.HashMap;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpUtil;
-import org.jaxen.expr.Step;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class PropertyPanel extends JPanel {
     private JBTabbedPane tabbedPane;
@@ -1216,11 +1213,38 @@ public class PropertyPanel extends JPanel {
                 String jsonBody = new ObjectMapper().writeValueAsString(paramMap);
 
                 // 发送POST请求，设置Content-Type为application/json
-                String result = HttpRequest.post(SmartPluginSettings.API_DOMAIN + "/generateInterface")
-                        .header("Content-Type", "application/json")
-                        .body(jsonBody)  // 直接发送JSON字符串
-                        .execute()
-                        .body();
+                String result = "";
+                HttpURLConnection conn = null;
+                try {
+                    URL url = new URL(SmartPluginSettings.API_DOMAIN + "/generateInterface");
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setDoOutput(true);
+                
+                    // Write request body
+                    try (OutputStream os = conn.getOutputStream()) {
+                        byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
+                        os.write(input, 0, input.length);
+                    }
+                
+                    // Read response
+                    try (BufferedReader br = new BufferedReader(
+                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                        StringBuilder response = new StringBuilder();
+                        String responseLine;
+                        while ((responseLine = br.readLine()) != null) {
+                            response.append(responseLine.trim());
+                        }
+                        result = response.toString();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("请求失败: " + e.getMessage());
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
+                }
                 
                 // 解析JSON响应获取data字段
                 ObjectMapper mapper = new ObjectMapper();

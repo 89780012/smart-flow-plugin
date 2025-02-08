@@ -8,7 +8,12 @@ import com.intellij.openapi.project.Project;
 import com.smart.cache.PluginCache;
 import com.smart.settings.SmartPluginSettings;
 import com.smart.settings.SmartPluginSettingsConfigurable;
-import cn.hutool.http.HttpUtil;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import cn.hutool.json.JSONUtil;
 
 import java.net.NetworkInterface;
@@ -51,10 +56,42 @@ public final class LicenseService {
 
         try {
             // 这里替换为实际的授权验证逻辑
-            String response = HttpUtil.post(LICENSE_CHECK_URL, JSONUtil.createObj()
-                    .set("code", licenseKey)
-                    .set("device_id", getDeviceId())
-                    .toString());
+            String response = "";
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(LICENSE_CHECK_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                // 构建请求体 (保留 JSONUtil 以保持一致性)
+                String requestBody = JSONUtil.createObj()
+                        .set("code", licenseKey)
+                        .set("device_id", getDeviceId())
+                        .toString();
+
+                // 写入请求体
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+
+                // 读取响应
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder responseBuilder = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        responseBuilder.append(responseLine.trim());
+                    }
+                    response = responseBuilder.toString();
+                }
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
 
             boolean valid = JSONUtil.parseObj(response).getBool("valid", false);
             PluginCache.isValidLicense = valid;
