@@ -23,13 +23,6 @@ public class SmartPluginSettings implements PersistentStateComponent<SmartPlugin
     private boolean enableRemoteStorage = false;
     private boolean archiveTabSelected = false;
     
-    // MySQL相关配置
-    private String dbType = "mysql";
-    private String mysqlUrl = "";
-    private String mysqlUsername = "";
-    private String mysqlPassword = "";
-    private boolean enableSqlAiAnalysis = false;
-
     // OpenAI相关配置
     private boolean enableOpenAI = false;
     private String openAIBaseUrl = "";
@@ -87,40 +80,6 @@ public class SmartPluginSettings implements PersistentStateComponent<SmartPlugin
     public void setArchiveTabSelected(boolean selected) {
         this.archiveTabSelected = selected;
     }
-
-    // MySQL相关的getter和setter
-    public String getMysqlUrl() {
-        return mysqlUrl;
-    }
-
-    public void setMysqlUrl(String mysqlUrl) {
-        this.mysqlUrl = mysqlUrl;
-    }
-
-    public String getMysqlUsername() {
-        return mysqlUsername;
-    }
-
-    public void setMysqlUsername(String mysqlUsername) {
-        this.mysqlUsername = mysqlUsername;
-    }
-
-    public String getMysqlPassword() {
-        return mysqlPassword;
-    }
-
-    public void setMysqlPassword(String mysqlPassword) {
-        this.mysqlPassword = mysqlPassword;
-    }
-
-    public boolean isEnableSqlAiAnalysis() {
-        return enableSqlAiAnalysis;
-    }
-
-    public void setEnableSqlAiAnalysis(boolean enableSqlAiAnalysis) {
-        this.enableSqlAiAnalysis = enableSqlAiAnalysis;
-    }
-
     // OpenAI相关的getter和setter
     public boolean isEnableOpenAI() {
         return enableOpenAI;
@@ -162,19 +121,4 @@ public class SmartPluginSettings implements PersistentStateComponent<SmartPlugin
         this.availableModels = availableModels;
     }
 
-    public static class State {
-        public boolean archiveTabSelected = false;
-        public boolean enableOpenAI = false;
-        public String openAIBaseUrl = "";
-        public String openAIAuthKey = "";
-        public String openAIModel = "gpt-3.5-turbo";
-    }
-
-    public String getDbType() {
-        return dbType;
-    }
-
-    public void setDbType(String dbType) {
-        this.dbType = dbType;
-    }
 }

@@ -2,10 +2,10 @@ package com.smart.window;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.SearchTextField;
@@ -24,7 +24,7 @@ import java.io.IOException;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.ui.tree.TreeUtil;
-import com.smart.BizFileEditor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Enumeration;
@@ -329,7 +329,9 @@ public class BizFilesPanel extends JPanel {
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) treeModel.getRoot();
         root.removeAllChildren();
         
-        VirtualFile projectDir = project.getBaseDir();
+        String basePath = project.getBasePath();
+        VirtualFile projectDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
+
         buildProjectTree(projectDir, root);
         
         treeModel.reload();
@@ -404,7 +406,9 @@ public class BizFilesPanel extends JPanel {
         root.removeAllChildren();
         
         searchText = searchText.toLowerCase();
-        VirtualFile projectDir = project.getBaseDir();
+        String basePath = project.getBasePath();
+        VirtualFile projectDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
+
         searchAndAddMatchingFiles(projectDir, root, searchText);
         
         treeModel.reload();
@@ -801,7 +805,10 @@ public class BizFilesPanel extends JPanel {
             } else if (userObject instanceof VirtualFile) {
                 VirtualFile file = (VirtualFile) userObject;
                 // 跳过src目录和项目根目录
-                if (!"src".equals(file.getName()) && !file.equals(project.getBaseDir())) {
+
+                String basePath = project.getBasePath();
+                VirtualFile baseDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
+                if (!"src".equals(file.getName()) && !file.equals(baseDir)) {
                     pathParts.add(file.getName());
                 }
             }
@@ -832,7 +839,8 @@ public class BizFilesPanel extends JPanel {
     private String getCompressedFullPath(VirtualFile directory) {
         List<String> pathParts = new ArrayList<>();
         VirtualFile current = directory;
-        VirtualFile projectRoot = project.getBaseDir();
+        String basePath = project.getBasePath();
+        VirtualFile projectRoot = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
         
         // 从当前目录向上遍历到项目根目录
         while (current != null && !current.equals(projectRoot)) {
@@ -1067,7 +1075,9 @@ public class BizFilesPanel extends JPanel {
         // 如果无法通过树节点获取路径，使用基本的路径构建方法
         List<String> pathParts = new ArrayList<>();
         VirtualFile current = file;
-        VirtualFile projectRoot = project.getBaseDir();
+        
+        String basePath = project.getBasePath();
+        VirtualFile projectRoot = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
         
         while (current != null && !current.equals(projectRoot)) {
             // 跳过src目录

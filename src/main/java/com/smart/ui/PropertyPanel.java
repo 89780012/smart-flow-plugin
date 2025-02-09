@@ -22,6 +22,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.net.URI;
 import java.util.Map;
 import com.smart.event.*;
 
@@ -1216,7 +1217,8 @@ public class PropertyPanel extends JPanel {
                 String result = "";
                 HttpURLConnection conn = null;
                 try {
-                    URL url = new URL(SmartPluginSettings.API_DOMAIN + "/generateInterface");
+                    URI uri = new URI(SmartPluginSettings.API_DOMAIN + "/generateInterface");
+                    URL url = uri.toURL();
                     conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");

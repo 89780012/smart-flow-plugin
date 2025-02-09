@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -649,10 +650,12 @@ public class ArchiveDialog extends DialogWrapper {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
-                    URL url = new URL(storedUrl);
+                    URI uri = new URI(storedUrl);
+                    URL url = uri.toURL();
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     int fileSize = conn.getContentLength();
                     
+
                     try (InputStream in = conn.getInputStream();
                          FileOutputStream out = new FileOutputStream(targetPath)) {
                         
@@ -845,7 +848,8 @@ public class ArchiveDialog extends DialogWrapper {
                         String targetPath = pluginDir + "/" + time + ".xml";
 
                         // 下载文件
-                        URL url = new URL(storedUrl);
+                        URI uri = new URI(storedUrl);
+                        URL url = uri.toURL();
                         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                         
                         try (InputStream in = conn.getInputStream();

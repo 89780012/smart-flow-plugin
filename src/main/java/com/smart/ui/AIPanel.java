@@ -7,7 +7,6 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
-import com.smart.ai.agent.DatabaseAIService;
 import com.smart.bean.ChatMessage;
 import com.smart.bean.Tool;
 import com.smart.cache.PluginCache;
@@ -19,8 +18,6 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class AIPanel extends JPanel {
@@ -54,7 +51,7 @@ public class AIPanel extends JPanel {
     private JPanel functionalButtonsPanel;
 
     private JComboBox<String> modeComboBox;
-    private static final String[] MODES = {"默认模式", "数据库模式"};
+    private static final String[] MODES = {"默认模式"};
 
     public AIPanel(Project project, VisualLayoutPanel visualLayoutPanel, VirtualFile currentFile) {
         this.project = project;
@@ -304,53 +301,6 @@ public class AIPanel extends JPanel {
         ChatMessage userMessage = new ChatMessage(userInput, true);
         addMessageToUI(userMessage);
         inputArea.setText("");
-
-        // 如果是数据库模式，则走单独的通道
-        if(PluginCache.enableSqlAiAnalysis && PluginCache.currentModel.equals("数据库模式")){
-            // 显示加载状态
-            loadingBubble = new MessageBubble("正在思考中,数据库模式下等待时间较长,请耐心等待...", false);
-            loadingPanel = createMessageWrapper(loadingBubble, false);
-            chatHistoryPanel.add(loadingPanel);
-            chatHistoryPanel.revalidate();
-            chatHistoryPanel.repaint();
-
-            // 使用 SwingWorker 异步处理
-            new SwingWorker<String, Void>() {
-                @Override
-                protected String doInBackground() {
-                    try {
-                        return DatabaseAIService.askQuestion(userInput);
-                    } catch (Exception e) {
-                        return "错误: " + e.getMessage();
-                    }
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        String respContent = get();
-                        // 移除加载状态
-                        if (loadingPanel != null) {
-                            chatHistoryPanel.remove(loadingPanel);
-                            loadingPanel = null;
-                        }
-                        // 添加响应消息
-                        ChatMessage responseMessage = new ChatMessage(respContent, false);
-                        addMessageToUI(responseMessage);
-                    } catch (Exception e) {
-                        // 处理异常
-                        if (loadingPanel != null) {
-                            chatHistoryPanel.remove(loadingPanel);
-                            loadingPanel = null;
-                        }
-                        ChatMessage errorMessage = new ChatMessage("处理请求时发生错误: " + e.getMessage(), false);
-                        addMessageToUI(errorMessage);
-                    }
-                }
-            }.execute();
-            
-            return;
-        }
 
         // 显示加载状态
         loadingBubble = new MessageBubble("正在思考中...", false);

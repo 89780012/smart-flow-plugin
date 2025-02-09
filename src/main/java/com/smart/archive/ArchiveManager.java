@@ -1,7 +1,6 @@
 package com.smart.archive;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -13,6 +12,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
@@ -271,7 +271,8 @@ public class ArchiveManager {
             
             HttpURLConnection conn = null;
             try {
-                URL url = new URL(REMOTE_API_URL);
+                URI uri = new URI(REMOTE_API_URL);
+                URL url = uri.toURL();
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setConnectTimeout(60000); // 设置连接超时
@@ -394,7 +395,8 @@ public class ArchiveManager {
                 urlStr += "?startTime=" + startTime;
             }
             
-            URL url = new URL(urlStr);
+            URI uri = new URI(urlStr);
+            URL url = uri.toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             

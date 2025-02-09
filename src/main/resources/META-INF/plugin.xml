@@ -25,8 +25,15 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <fileTypeFactory implementation="com.smart.FileAction" />
+        <fileType
+                name="BizFileAction"
+                implementationClass="com.smart.language.MyCustomFileType"
+                fieldName="INSTANCE"
+                language="BizFileAction"
+                extensions="biz"/>
+
         <fileEditorProvider implementation="com.smart.BizFileEditorProvider"/>
+
         <toolWindow id="Biz Files" 
                     icon="/icons/biz.svg"
                     anchor="right"

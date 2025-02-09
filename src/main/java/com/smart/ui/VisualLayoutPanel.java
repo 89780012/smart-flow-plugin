@@ -1,7 +1,5 @@
 package com.smart.ui;
 
-import cn.hutool.core.util.ObjectUtil;
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -27,6 +25,10 @@ import java.awt.event.*;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.RoundRectangle2D;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.*;
 import java.util.List;
 
@@ -1588,12 +1590,30 @@ public class VisualLayoutPanel {
         return point.distance(connection.controlPoint) <= 10;
     }
 
+    private ComponentInfo deepClone(ComponentInfo obj) {
+        try {
+            // 序列化
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(obj);
+            
+            // 反序列化
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            return (ComponentInfo) ois.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+
     // 添加新的方法来复制节点
     private void copyNode(JLayeredPane originalLayeredPane) {
         String originalId = (String) originalLayeredPane.getClientProperty("id");
         ComponentInfo originalInfo = PluginCache.componentInfoMap.get(utils.getComponentId(originalId));
         //将原始节点信息复制到新的节点
-        ComponentInfo cloneObj = ObjectUtil.clone(originalInfo);
+        ComponentInfo cloneObj = deepClone(originalInfo);
 
         if (originalInfo != null) {
             // 创建新的唯一ID
@@ -2377,20 +2397,6 @@ public class VisualLayoutPanel {
         // 实现组件位置计算逻辑
         int x = 20;
         int y = 20;
-        
-//        // 遍历现有组件找到可用空间
-//        Component[] components = getComponents();
-//        if (components.length > 0) {
-//            Rectangle lastBounds = components[components.length - 1].getBounds();
-//            if (lastBounds.x + lastBounds.width + 100 < getWidth()) {
-//                x = lastBounds.x + lastBounds.width + 20;
-//                y = lastBounds.y;
-//            } else {
-//                x = 20;
-//                y = lastBounds.y + lastBounds.height + 20;
-//            }
-//        }
-        
         return new Point(x, y);
     }
 
@@ -2401,68 +2407,4 @@ public class VisualLayoutPanel {
         JComponent uiComponent = null;
         return null;
     }
-//        // 根据组件类型创建对应的UI组件
-//        switch (type) {
-//            case "print":
-//                uiComponent = createPrintComponent(name);
-//                break;
-//            case "sql":
-//                uiComponent = createSqlComponent(name);
-//                break;
-//            case "assign":
-//                uiComponent = createAssignComponent(name);
-//                break;
-//            case "groovy":
-//                uiComponent = createGroovyComponent(name);
-//                break;
-//            case "date":
-//                uiComponent = createDateComponent(name);
-//                break;
-//            // 添加更多组件类型支持
-//            default:
-//                // 默认创建一个标准组件
-//                uiComponent = createDefaultComponent(name);
-//        }
-//
-//        if (uiComponent != null) {
-//            // 设置组件基本属性
-//            uiComponent.setName(name);
-//
-//            // 添加拖拽支持
-//            uiComponent.setTransferHandler(new ComponentTransferHandler());
-//            uiComponent.setDragEnabled(true);
-//
-//            // 添加鼠标事件监听
-//            addMouseListeners(uiComponent);
-//        }
-//
-//        return uiComponent;
-//    }
-//
-//    private JComponent createPrintComponent(String name) {
-//        JPanel panel = new JPanel(new BorderLayout());
-//        panel.add(new JLabel(AllIcons.Actions.Print), BorderLayout.WEST);
-//        panel.add(new JLabel(name), BorderLayout.CENTER);
-//        return panel;
-//    }
-//
-//    private JComponent createSqlComponent(String name) {
-//        JPanel panel = new JPanel(new BorderLayout());
-//        panel.add(new JLabel(AllIcons.Providers.Mysql), BorderLayout.WEST);
-//        panel.add(new JLabel(name), BorderLayout.CENTER);
-//        return panel;
-//    }
-//
-//    // 添加其他组件类型的创建方法...
-//    private void addMouseListeners(JComponent component) {
-//        component.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                if (e.getClickCount() == 2) {
-//                    // 处理双击事件
-//                    openComponentSettings(component);
-//                }
-//            }
-//        });
-//    }
 }

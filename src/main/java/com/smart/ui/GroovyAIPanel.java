@@ -2,14 +2,10 @@ package com.smart.ui;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.JBColor;
 import com.smart.bean.ChatMessage;
 import com.smart.service.OpenAIService;
-import com.smart.ui.message.MessageBubble;
-import com.smart.utils.MarkdownUtil;
 
 import javax.swing.*;
-import java.util.List;
 
 public class GroovyAIPanel extends AIPanel {
     private Document editorDocument;

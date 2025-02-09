@@ -13,16 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BizFileUtils {
-    public static List<BizFileInfo> findBizFiles(Project project) {
-        List<BizFileInfo> bizFiles = new ArrayList<>();
-        VirtualFile projectDir = project.getBaseDir();
-        // 查找 src 目录
-        VirtualFile srcDir = projectDir.findChild("src");
-        if (srcDir != null && srcDir.exists()) {
-            collectBizFiles(srcDir, bizFiles);
-        }
-        return bizFiles;
-    }
 
     private static void collectBizFiles(VirtualFile dir, List<BizFileInfo> bizFiles) {
         if (dir == null || !dir.exists()) return;

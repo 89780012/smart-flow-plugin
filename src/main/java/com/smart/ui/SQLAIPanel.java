@@ -3,19 +3,9 @@ package com.smart.ui;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.smart.bean.ChatMessage;
-import com.smart.bean.Function;
-import com.smart.bean.Tool;
-import com.smart.cache.PluginCache;
 import com.smart.service.OpenAIService;
-import com.smart.settings.SmartPluginSettings;
-import com.smart.ui.message.MessageBubble;
-import com.smart.utils.StringUtils;
-
 import javax.swing.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
-import java.util.HashMap;
+
 
 public class SQLAIPanel extends AIPanel {
     private Document editorDocument;
@@ -90,42 +80,5 @@ public class SQLAIPanel extends AIPanel {
         return SQL_QUICK_ACTIONS;
     }
 
-    public void registerTool() {
-        // 构建参数定义
-        Map<String, Object> queryProperty = new HashMap<>();
-        queryProperty.put("type", "string");
-        queryProperty.put("description", 
-            "SQL query extracting info to answer the user's question.\n" +
-            "SQL should be written using this database schema:\n" +
-            getDatabaseSchema() + "\n" +  // 获取数据库schema
-            "The query should be returned in plain text, not in JSON.\n" +
-            "The query should only contain grammars supported by Mysql."
-        );
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("query", queryProperty);
-
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("type", "object");
-        parameters.put("properties", properties);
-        parameters.put("required", Arrays.asList("query"));
-
-        // 创建函数定义
-        Function askDatabase = new Function(
-            "ask_database",
-            "Use this function to answer user questions about business. Output should be a fully formed SQL query.",
-            parameters
-        );
-
-        // 创建并注册工具
-        Tool databaseTool = new Tool(askDatabase);
-        this.openAIService.registerTool(databaseTool);
-    }
-
-    // 获取数据库schema信息
-    private String getDatabaseSchema() {
-        List<String> sqlContents = PluginCache.sqlContents;
-        String concatenatedSql = String.join("\n", sqlContents);
-        return concatenatedSql;
-    }
 } 

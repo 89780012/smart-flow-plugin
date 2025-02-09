@@ -35,10 +35,6 @@ public class SmartPluginSettingsConfigurable implements Configurable {
         
         return !component.getLicenseKey().equals(settings.getLicenseKey()) ||
                component.isEnableRemoteStorage() != settings.isEnableRemoteStorage() ||
-               component.isEnableSqlAiAnalysis() != settings.isEnableSqlAiAnalysis() ||
-               !component.getMysqlUrl().equals(settings.getMysqlUrl()) ||
-               !component.getMysqlUsername().equals(settings.getMysqlUsername()) ||
-               !component.getMysqlPassword().equals(settings.getMysqlPassword()) ||
                component.isOpenAIEnabled() != settings.isEnableOpenAI() ||
                !component.getOpenAIBaseUrl().equals(settings.getOpenAIBaseUrl()) ||
                !component.getOpenAIAuthKey().equals(settings.getOpenAIAuthKey()) ||
@@ -53,10 +49,6 @@ public class SmartPluginSettingsConfigurable implements Configurable {
         
         settings.setLicenseKey(component.getLicenseKey());
         settings.setEnableRemoteStorage(component.isEnableRemoteStorage());
-        settings.setEnableSqlAiAnalysis(component.isEnableSqlAiAnalysis());
-        settings.setMysqlUrl(component.getMysqlUrl());
-        settings.setMysqlUsername(component.getMysqlUsername());
-        settings.setMysqlPassword(component.getMysqlPassword());
         settings.setEnableOpenAI(component.isOpenAIEnabled());
         settings.setOpenAIBaseUrl(component.getOpenAIBaseUrl());
         settings.setOpenAIAuthKey(component.getOpenAIAuthKey());
@@ -71,10 +63,6 @@ public class SmartPluginSettingsConfigurable implements Configurable {
         
         component.setLicenseKey(settings.getLicenseKey());
         component.setEnableRemoteStorage(settings.isEnableRemoteStorage());
-        component.setEnableSqlAiAnalysis(settings.isEnableSqlAiAnalysis());
-        component.setMysqlUrl(settings.getMysqlUrl());
-        component.setMysqlUsername(settings.getMysqlUsername());
-        component.setMysqlPassword(settings.getMysqlPassword());
         component.setOpenAIEnabled(settings.isEnableOpenAI());
         component.setOpenAIBaseUrl(settings.getOpenAIBaseUrl());
         component.setOpenAIAuthKey(settings.getOpenAIAuthKey());

@@ -23,16 +23,6 @@ public class SmartPluginSettingsComponent {
 //    private final JButton saveButton;
     private final JCheckBox enableRemoteStorageCheckBox;
 
-    // MySQL配置相关组件
-    private final JTextField mysqlUrlField;
-    private final JTextField mysqlUsernameField;
-    private final JPasswordField mysqlPasswordField;
-    private final JCheckBox enableSqlAiAnalysisCheckBox;
-
-    // 新增数据库类型选择和连接测试相关组件
-    private final JComboBox<String> dbTypeComboBox;
-    private final JButton testConnectionButton;
-    private final JLabel connectionStatusLabel;
 
     private JPanel openAIPanel;
     private JCheckBox enableOpenAICheckBox;
@@ -89,132 +79,6 @@ public class SmartPluginSettingsComponent {
         gbc.gridwidth = 3;
         gbc.weightx = 1.0;
         mainPanel.add(featurePanel, gbc);
-
-        // 创建数据库配置面板
-        JPanel dbPanel = new JPanel(new GridBagLayout());
-        dbPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "数据库配置",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-        ));
-
-        GridBagConstraints dbGbc = new GridBagConstraints();
-        dbGbc.insets = new Insets(5, 5, 5, 5);
-        dbGbc.fill = GridBagConstraints.HORIZONTAL;
-        dbGbc.anchor = GridBagConstraints.WEST;
-
-        // 数据库类型选择
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 0;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        JLabel dbTypeLabel = new JBLabel("数据库类型: ");
-        dbTypeLabel.setPreferredSize(new Dimension(100, dbTypeLabel.getPreferredSize().height));
-        dbPanel.add(dbTypeLabel, dbGbc);
-
-        dbGbc.gridx = 1;
-        dbGbc.gridwidth = 2;
-        dbGbc.weightx = 1.0;
-        dbTypeComboBox = new JComboBox<>(new String[]{"MySQL"});
-        dbPanel.add(dbTypeComboBox, dbGbc);
-
-        // MySQL URL
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 1;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        JLabel urlLabel = new JBLabel("数据库连接: ");
-        urlLabel.setPreferredSize(new Dimension(100, urlLabel.getPreferredSize().height));
-        dbPanel.add(urlLabel, dbGbc);
-
-        dbGbc.gridx = 1;
-        dbGbc.gridwidth = 2;
-        dbGbc.weightx = 1.0;
-        mysqlUrlField = new JTextField();
-        mysqlUrlField.setToolTipText("例如: jdbc:mysql://localhost:3306/database");
-        dbPanel.add(mysqlUrlField, dbGbc);
-
-        // MySQL Username
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 2;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        JLabel userLabel = new JBLabel("数据库用户名: ");
-        userLabel.setPreferredSize(new Dimension(100, userLabel.getPreferredSize().height));
-        dbPanel.add(userLabel, dbGbc);
-
-        dbGbc.gridx = 1;
-        dbGbc.gridwidth = 2;
-        dbGbc.weightx = 1.0;
-        mysqlUsernameField = new JTextField();
-        dbPanel.add(mysqlUsernameField, dbGbc);
-
-        // MySQL Password
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 3;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        JLabel pwdLabel = new JBLabel("数据库密码: ");
-        pwdLabel.setPreferredSize(new Dimension(100, pwdLabel.getPreferredSize().height));
-        dbPanel.add(pwdLabel, dbGbc);
-
-        dbGbc.gridx = 1;
-        dbGbc.gridwidth = 2;
-        dbGbc.weightx = 1.0;
-        mysqlPasswordField = new JPasswordField();
-        dbPanel.add(mysqlPasswordField, dbGbc);
-
-        // 在测试连接按钮之前添加SQL AI分析选项
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 4;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        enableSqlAiAnalysisCheckBox = new JCheckBox("开启SQL AI Agent分析");
-        dbPanel.add(enableSqlAiAnalysisCheckBox, dbGbc);
-
-        dbGbc.gridx = 1;
-        dbGbc.weightx = 1.0;
-        JLabel sqlAiVipLabel = new JLabel("(VIP可用)");
-        sqlAiVipLabel.setForeground(new Color(128, 128, 128));
-        dbPanel.add(sqlAiVipLabel, dbGbc);
-
-        // 添加SQL AI分析说明文字
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 5;
-        dbGbc.gridwidth = 3;
-        dbGbc.weightx = 1.0;
-        JLabel sqlAiDescLabel = new JLabel("<html>开启后请在AI面板应用中选择数据库模式, 可针对数据库进行问答。</html>");
-        sqlAiDescLabel.setForeground(new Color(128, 128, 128));
-        sqlAiDescLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 5, 0));
-        dbPanel.add(sqlAiDescLabel, dbGbc);
-
-        // 更新连接状态标签和测试连接按钮的位置
-        dbGbc.gridx = 0;
-        dbGbc.gridy = 6;
-        dbGbc.gridwidth = 2;
-        dbGbc.weightx = 1.0;
-        connectionStatusLabel = new JLabel();
-        dbPanel.add(connectionStatusLabel, dbGbc);
-
-        dbGbc.gridx = 2;
-        dbGbc.gridwidth = 1;
-        dbGbc.weightx = 0.0;
-        testConnectionButton = new JButton("测试连接");
-        testConnectionButton.setPreferredSize(new Dimension(100, testConnectionButton.getPreferredSize().height));
-        dbPanel.add(testConnectionButton, dbGbc);
-
-        // 添加测试连接按钮事件
-        testConnectionButton.addActionListener(e -> {
-            testDatabaseConnection();
-        });
-
-        // 添加数据库配置面板到主面板
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 3;
-        gbc.weightx = 1.0;
-        mainPanel.add(dbPanel, gbc);
 
         // 创建OpenAI配置面板
         openAIPanel = new JPanel(new GridBagLayout());
@@ -487,19 +351,6 @@ public class SmartPluginSettingsComponent {
             }
         });
 
-        // 添加保存按钮事件
-//        saveButton.addActionListener(e -> {
-//            SmartPluginSettings settings = SmartPluginSettings.getInstance();
-//            settings.setLicenseKey(licenseKeyField.getText());
-//            settings.setEnableRemoteStorage(enableRemoteStorageCheckBox.isSelected());
-//            settings.setEnableSqlAiAnalysis(enableSqlAiAnalysisCheckBox.isSelected());
-//            settings.setDbType(dbTypeComboBox.getSelectedItem().toString());
-//            settings.setMysqlUrl(mysqlUrlField.getText());
-//            settings.setMysqlUsername(mysqlUsernameField.getText());
-//            settings.setMysqlPassword(mysqlPasswordField.getText());
-//            settings.loadState(settings);
-//            JOptionPane.showMessageDialog(mainPanel, "配置已保存", "提示", JOptionPane.INFORMATION_MESSAGE);
-//        });
 
         // 添加复选框状态变化监听
         enableRemoteStorageCheckBox.addItemListener(e -> {
@@ -516,24 +367,15 @@ public class SmartPluginSettingsComponent {
         
         // 添加文本框监听
         addTextFieldListener(licenseKeyField);
-        addTextFieldListener(mysqlUrlField);
-        addTextFieldListener(mysqlUsernameField);
-        addTextFieldListener(mysqlPasswordField);
+
         addTextFieldListener(openAIBaseUrlField);
         addTextFieldListener(openAIAuthKeyField);
         addTextFieldListener(openAIModelField);
         
         // 添加复选框监听
         addCheckBoxListener(enableRemoteStorageCheckBox);
-        addCheckBoxListener(enableSqlAiAnalysisCheckBox);
         addCheckBoxListener(enableOpenAICheckBox);
-        
-        // 添加下拉框监听
-        dbTypeComboBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                scheduleSave();
-            }
-        });
+
     }
 
     public JComponent getPanel() {
@@ -582,92 +424,6 @@ public class SmartPluginSettingsComponent {
         enableRemoteStorageCheckBox.setSelected(enable);
     }
 
-    // Getters and setters for MySQL configuration
-    public String getMysqlUrl() {
-        return mysqlUrlField.getText();
-    }
-
-    public void setMysqlUrl(String url) {
-        mysqlUrlField.setText(url);
-    }
-
-    public String getMysqlUsername() {
-        return mysqlUsernameField.getText();
-    }
-
-    public void setMysqlUsername(String username) {
-        mysqlUsernameField.setText(username);
-    }
-
-    public String getMysqlPassword() {
-        return new String(mysqlPasswordField.getPassword());
-    }
-
-    public void setMysqlPassword(String password) {
-        mysqlPasswordField.setText(password);
-    }
-
-    public boolean isEnableSqlAiAnalysis() {
-        return enableSqlAiAnalysisCheckBox.isSelected();
-    }
-
-    public void setEnableSqlAiAnalysis(boolean enable) {
-        enableSqlAiAnalysisCheckBox.setSelected(enable);
-    }
-
-    // 测试数据库连接
-    private void testDatabaseConnection() {
-        connectionStatusLabel.setText("正在测试连接...");
-        connectionStatusLabel.setForeground(Color.GRAY);
-        testConnectionButton.setEnabled(false);
-
-        // 在后台线程中执行连接测试
-        SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
-            @Override
-            protected Boolean doInBackground() {
-                try {
-                    Class.forName("com.mysql.cj.jdbc.Driver");
-                    try (Connection conn = DriverManager.getConnection(
-                            mysqlUrlField.getText(),
-                            mysqlUsernameField.getText(),
-                            new String(mysqlPasswordField.getPassword()))) {
-                        return true;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    boolean success = get();
-                    if (success) {
-                        connectionStatusLabel.setText("连接成功");
-                        connectionStatusLabel.setForeground(new Color(0, 150, 0));
-                    } else {
-                        connectionStatusLabel.setText("连接失败");
-                        connectionStatusLabel.setForeground(Color.RED);
-                    }
-                } catch (Exception e) {
-                    connectionStatusLabel.setText("连接测试出错");
-                    connectionStatusLabel.setForeground(Color.RED);
-                }
-                testConnectionButton.setEnabled(true);
-            }
-        };
-        worker.execute();
-    }
-
-    // 新增 getter 和 setter 方法
-    public String getDbType() {
-        return (String) dbTypeComboBox.getSelectedItem();
-    }
-
-    public void setDbType(String dbType) {
-        dbTypeComboBox.setSelectedItem(dbType);
-    }
 
     public boolean isOpenAIEnabled() {
         return enableOpenAICheckBox.isSelected();
@@ -733,11 +489,6 @@ public class SmartPluginSettingsComponent {
         SmartPluginSettings settings = SmartPluginSettings.getInstance();
         settings.setLicenseKey(getLicenseKey());
         settings.setEnableRemoteStorage(isEnableRemoteStorage());
-        settings.setEnableSqlAiAnalysis(isEnableSqlAiAnalysis());
-        settings.setDbType(getDbType());
-        settings.setMysqlUrl(getMysqlUrl());
-        settings.setMysqlUsername(getMysqlUsername());
-        settings.setMysqlPassword(getMysqlPassword());
         settings.setEnableOpenAI(isOpenAIEnabled());
         settings.setOpenAIBaseUrl(getOpenAIBaseUrl());
         settings.setOpenAIAuthKey(getOpenAIAuthKey());

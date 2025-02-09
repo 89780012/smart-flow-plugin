@@ -70,7 +70,7 @@ public class OpenAIService {
                 }
 
                 // 如果model为空，则给出提示
-                if(StringUtils.isBlank(model)){
+                if(model == null || model.isEmpty()){
                     SwingUtilities.invokeLater(() -> {
                         int result = Messages.showDialog(
                             "未配置AI模型，请先在设置中配置模型信息。",
@@ -122,7 +122,8 @@ public class OpenAIService {
                 requestBody.put("messages", messages);
 
                 try {
-                    URL url = new URL(tempAPIURL);
+                    URI uri = new URI(tempAPIURL);
+                    URL url = uri.toURL();
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");

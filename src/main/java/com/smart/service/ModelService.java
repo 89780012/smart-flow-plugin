@@ -1,32 +1,30 @@
 package com.smart.service;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.components.ServiceManager;
 import com.smart.cache.PluginCache;
 import com.smart.settings.SmartPluginSettings;
+import com.intellij.openapi.application.ApplicationManager;
 
 import java.util.List;
 import java.util.Collections;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
 
 @Service
 public final class ModelService {
-    
-    private static final String MODEL_LIST_URL = SmartPluginSettings.API_DOMAIN + "/v1/models";
-    
+
     public static ModelService getInstance() {
-        return ServiceManager.getService(ModelService.class);
+        return ApplicationManager.getApplication().getService(ModelService.class);
     }
     
     public void fetchAvailableModels() {
-
         try {
             String tmpModelListUrl = SmartPluginSettings.API_DOMAIN + "/v1/models";
             String tmpApiKey = ""; // 内置的不需要
@@ -36,11 +34,11 @@ public final class ModelService {
                 tmpModelListUrl = SmartPluginSettings.getInstance().getOpenAIBaseUrl() + "/v1/models";
                 tmpApiKey = SmartPluginSettings.getInstance().getOpenAIAuthKey();
             }
-            // 使用Hutool发起HTTP请求
             String result = "";
             HttpURLConnection conn = null;
             try {
-                URL url = new URL(tmpModelListUrl);
+                URI uri = new URI(tmpModelListUrl);
+                URL url = uri.toURL();
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Authorization", "Bearer " + tmpApiKey);
@@ -61,14 +59,17 @@ public final class ModelService {
                 }
             }
             // 解析JSON响应
-            JSONObject json = JSONUtil.parseObj(result);
+            JSONObject json = new JSONObject(result);
+            
             try{
                 // 获取data数组
                 JSONArray modelsArray = json.getJSONArray("data");
-                // 提取每个model对象的id字段
-                List<String> models = modelsArray.stream()
-                        .map(obj -> ((JSONObject)obj).getStr("id"))
-                        .toList();
+                List<String> models = new ArrayList<>();
+                // 遍历数组提取id
+                for (int i = 0; i < modelsArray.length(); i++) {
+                    JSONObject modelObj = modelsArray.getJSONObject(i);
+                    models.add(modelObj.getString("id"));
+                }
 
                 PluginCache.availableModels = models;
             }catch (Exception e){

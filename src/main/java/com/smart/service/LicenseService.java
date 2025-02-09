@@ -2,20 +2,20 @@ package com.smart.service;
 
 import com.intellij.notification.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.Service;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.smart.cache.PluginCache;
 import com.smart.settings.SmartPluginSettings;
 import com.smart.settings.SmartPluginSettingsConfigurable;
+import org.json.JSONObject;
+
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import cn.hutool.json.JSONUtil;
-
 import java.net.NetworkInterface;
 import java.util.UUID;
 
@@ -59,17 +59,19 @@ public final class LicenseService {
             String response = "";
             HttpURLConnection conn = null;
             try {
-                URL url = new URL(LICENSE_CHECK_URL);
+                URI uri = new URI(LICENSE_CHECK_URL);
+                URL url = uri.toURL();
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
-                // 构建请求体 (保留 JSONUtil 以保持一致性)
-                String requestBody = JSONUtil.createObj()
-                        .set("code", licenseKey)
-                        .set("device_id", getDeviceId())
-                        .toString();
+                // 构建请求体 (使用原生Java构建JSON)
+                String requestBody = String.format(
+                    "{\"code\":\"%s\",\"device_id\":\"%s\"}", 
+                    licenseKey.replace("\"", "\\\""), 
+                    getDeviceId().replace("\"", "\\\"")
+                );
 
                 // 写入请求体
                 try (OutputStream os = conn.getOutputStream()) {
@@ -93,12 +95,13 @@ public final class LicenseService {
                 }
             }
 
-            boolean valid = JSONUtil.parseObj(response).getBool("valid", false);
+            JSONObject jsonResponse = new JSONObject(response);
+            boolean valid = jsonResponse.getBoolean("valid");
             PluginCache.isValidLicense = valid;
             
             if (valid) {
                 // 保存有效的授权码和到期时间
-                expiresAt = JSONUtil.parseObj(response).getStr("expires_at");
+                expiresAt = jsonResponse.getString("expires_at");
                 SmartPluginSettings.getInstance().setLicenseKey(licenseKey);
                 SmartPluginSettings.getInstance().setExpiresAt(expiresAt);
             }

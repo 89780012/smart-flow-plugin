@@ -1,68 +1,44 @@
 package com.smart;
 
-import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorLocation;
 import com.intellij.openapi.fileEditor.FileEditorState;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.OrderEnumerator;
-
 import java.util.*;
 
-import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
-import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.util.UserDataHolderBase;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.Gray;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SearchTextField;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.tree.TreeUtil;
 import com.smart.bean.ComponentItem;
 import com.smart.cache.PluginCache;
-import com.smart.settings.SmartPluginSettingsConfigurable;
 import com.smart.tasks.AsyncTaskManager;
 import com.smart.ui.*;
-import com.smart.utils.SourseCodeUtils;
-import org.apache.maven.model.Plugin;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.*;
 
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import com.intellij.openapi.module.Module;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.io.File;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.swing.event.DocumentEvent;
-import javax.swing.plaf.basic.BasicToggleButtonUI;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.DocumentBuilder;
@@ -71,17 +47,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.List;
 
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.popup.Balloon;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
-
-import com.intellij.openapi.ui.popup.JBPopup;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
-
 import com.intellij.icons.AllIcons;
-import com.smart.settings.SmartPluginSettings;
-import com.smart.service.LicenseService;
 import com.smart.archive.ArchiveManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.application.ApplicationManager;
@@ -413,7 +379,9 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
      */
     private void loadCustomComponents() {
         // 获取项目目录
-        VirtualFile projectDir = project.getBaseDir();
+        String basePath = project.getBasePath();
+        VirtualFile projectDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
+        
         // 查找有模块中的 resources 目录
         List<VirtualFile> resourcesDirs = findAllResourcesDirectories(projectDir);
 
@@ -632,8 +600,10 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
      */
     private void loadTreeComponents(DefaultMutableTreeNode parentNode, boolean isCustom) throws Exception {
         if (isCustom) {
+            String basePath = project.getBasePath();
+            VirtualFile baseDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
             // 获取所有模块的 components.xml
-            List<VirtualFile> resourcesDirs = findAllResourcesDirectories(project.getBaseDir());
+            List<VirtualFile> resourcesDirs = findAllResourcesDirectories(baseDir);
             for (VirtualFile resourcesDir : resourcesDirs) {
                 VirtualFile customConfigFile = resourcesDir.findChild("components.xml");
                 if (customConfigFile != null && customConfigFile.exists()) {
@@ -945,8 +915,10 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     // 添加过滤加载组件的方法
     private void loadFilteredComponents(DefaultMutableTreeNode parentNode, boolean isCustom, String searchText) throws Exception {
         if (isCustom) {
+            String basePath = project.getBasePath();
+            VirtualFile baseDir = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
             // 加载自定义组件配置
-            List<VirtualFile> resourcesDirs = findAllResourcesDirectories(project.getBaseDir());
+            List<VirtualFile> resourcesDirs = findAllResourcesDirectories(baseDir);
             for (VirtualFile resourcesDir : resourcesDirs) {
                 VirtualFile customConfigFile = resourcesDir.findChild("components.xml");
                 if (customConfigFile != null && customConfigFile.exists()) {
@@ -1060,7 +1032,6 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                         //刷新文件
                         PluginCache.sourseCodeUtils.loadComponentsFromSource();
 
-
                         // 在下一个 EDT 周期中恢复状态
                         ApplicationManager.getApplication().invokeLater(() -> {
                             FileEditor[] editors = fileEditorManager.getEditors(file);
@@ -1106,7 +1077,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                                     break;
                                 }
                             }
-                        }, ModalityState.NON_MODAL); // 指定 ModalityState
+                        });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1119,7 +1090,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                     "错误");
                 e.printStackTrace();
             }
-        }, ModalityState.NON_MODAL); // 指定 ModalityState
+        });
     }
 
 }
