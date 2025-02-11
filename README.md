@@ -25,7 +25,7 @@
 
 本插件配备了配套的SpringBoot starter项目，便于快速集成：
 
-- 项目地址：[smartf-flow](https://github.com/89780012/smart-flow)
+- 项目地址：[smart-flow](https://github.com/89780012/smart-flow)
 - 集成文档：[https://smartflow.fun/](https://smartflow.fun/)
 
 ## 界面展示
