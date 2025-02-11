@@ -41,10 +41,13 @@
     </div>
 </div>
 
-<div style="text-align: center;">
-    <img src="docs/images/QQ20250211-215221.png" width="70%" alt="配置界面"/>
-    <p>组件配置界面</p>
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+    <div style="width: 48%;">
+        <img src="docs/images/QQ20250211-215221.png" width="100%" alt="配置界面"/>
+        <p align="center">组件配置界面</p>
+    </div>
 </div>
+
 
 ## 贡献指南
 
