@@ -1,11 +1,19 @@
 package com.smart.bean;
 
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.smart.utils.IconUtils;
 
 import javax.swing.Icon;
+import java.io.File;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import java.awt.image.BufferedImage;
 
 public class ComponentItem implements Serializable {
     private String name;
@@ -87,9 +95,7 @@ public class ComponentItem implements Serializable {
 
     public Icon getIcon() {
         if (icon == null && iconPath != null) {
-            //System.out.println("Attempting to load icon from path: " + iconPath);
-            icon = IconLoader.getIcon(iconPath, ComponentItem.class);
-            //System.out.println("Icon loaded: " + (icon != null ? "success" : "failed"));
+           icon = IconUtils.getIcon(iconPath);
         }
         return icon;
     }

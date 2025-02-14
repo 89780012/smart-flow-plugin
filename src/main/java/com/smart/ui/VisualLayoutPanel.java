@@ -15,6 +15,7 @@ import com.smart.dialog.*;
 import com.smart.enums.ReturnType;
 import com.smart.enums.ThreadType;
 import com.smart.tasks.AsyncTaskManager;
+import com.smart.utils.IconUtils;
 import com.smart.utils.SourseCodeUtils;
 import org.apache.maven.model.Plugin;
 
@@ -806,11 +807,7 @@ public class VisualLayoutPanel {
         contentPanel.setOpaque(false);
         contentPanel.setBounds(0, 0, 90, 70);
 
-        Icon icon = item.getIcon();
-        if (icon == null) {
-            icon = IconLoader.getIcon(item.getIconPath(), VisualLayoutPanel.class);
-        }
-        final Icon finalIcon = icon;
+        final Icon finalIcon = IconUtils.getIcon(item.getIconPath());;
 
         Icon largeIcon = new Icon() {
             @Override

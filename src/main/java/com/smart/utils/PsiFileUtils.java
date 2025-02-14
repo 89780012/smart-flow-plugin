@@ -5,8 +5,6 @@ import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PsiFileUtils {
     public static String extractClassName(PsiFile file) {

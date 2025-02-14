@@ -500,11 +500,35 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                 NodeList iconNodes = itemElement.getElementsByTagName("icon");
                 if (iconNodes.getLength() > 0) {
                     String customIcon = iconNodes.item(0).getTextContent();
-                    // 检查自定义图是否有效
-                    if (customIcon != null && !customIcon.trim().isEmpty() &&
-                            (BizFileEditor.class.getResource(customIcon) != null ||
-                                    (!isCustom && customIcon.startsWith("/icons/")))) {
-                        icon = customIcon;
+                    if (customIcon != null && !customIcon.trim().isEmpty()) {
+                        // 1. 首先尝试从插件内部resources加载
+                        if (BizFileEditor.class.getResource(customIcon) != null) {
+                            icon = customIcon;
+                        } 
+                        // 2. 如果不是插件内部图标且是自定义组件,尝试从项目resources加载
+                        else if (isCustom) {
+                            String basePath = project.getBasePath();
+                            if (basePath != null) {
+                                VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
+                                if (baseDir != null) {
+                                    // 查找所有resources目录
+                                    List<VirtualFile> resourcesDirs = findAllResourcesDirectories(baseDir);
+                                    for (VirtualFile resourcesDir : resourcesDirs) {
+                                        // 移除路径开头的/,避免路径拼接问题
+                                        String iconPath = customIcon.startsWith("/") ? customIcon.substring(1) : customIcon;
+                                        VirtualFile iconFile = resourcesDir.findFileByRelativePath(iconPath);
+                                        if (iconFile != null && iconFile.exists()) {
+                                            icon = iconFile.getPath();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // 3. 如果是插件内置组件且图标以/icons/开头,使用该图标
+                        else if (!isCustom && customIcon.startsWith("/icons/")) {
+                            icon = customIcon;
+                        }
                     }
                 }
 
@@ -648,11 +672,35 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                 NodeList iconNodes = itemElement.getElementsByTagName("icon");
                 if (iconNodes.getLength() > 0) {
                     String customIcon = iconNodes.item(0).getTextContent();
-                    // 检查自定义图标是否有效
-                    if (customIcon != null && !customIcon.trim().isEmpty() &&
-                            (BizFileEditor.class.getResource(customIcon) != null ||
-                                    (!isCustom && customIcon.startsWith("/icons/")))) {
-                        iconPath = customIcon;
+                    if (customIcon != null && !customIcon.trim().isEmpty()) {
+                        // 1. 首先尝试从插件内部resources加载
+                        if (BizFileEditor.class.getResource(customIcon) != null) {
+                            iconPath = customIcon;
+                        } 
+                        // 2. 如果不是插件内部图标且是自定义组件,尝试从项目resources加载
+                        else if (isCustom) {
+                            String basePath = project.getBasePath();
+                            if (basePath != null) {
+                                VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
+                                if (baseDir != null) {
+                                    // 查找所有resources目录
+                                    List<VirtualFile> resourcesDirs = findAllResourcesDirectories(baseDir);
+                                    for (VirtualFile resourcesDir : resourcesDirs) {
+                                        // 移除路径开头的/,避免路径拼接问题
+                                        iconPath = customIcon.startsWith("/") ? customIcon.substring(1) : customIcon;
+                                        VirtualFile iconFile = resourcesDir.findFileByRelativePath(iconPath);
+                                        if (iconFile != null && iconFile.exists()) {
+                                            iconPath = iconFile.getPath();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // 3. 如果是插件内置组件且图标以/icons/开头,使用该图标
+                        else if (!isCustom && customIcon.startsWith("/icons/")) {
+                            iconPath = customIcon;
+                        }
                     }
                 }
 
@@ -962,10 +1010,35 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                     NodeList iconNodes = itemElement.getElementsByTagName("icon");
                     if (iconNodes.getLength() > 0) {
                         String customIcon = iconNodes.item(0).getTextContent();
-                        if (customIcon != null && !customIcon.trim().isEmpty() &&
-                                (BizFileEditor.class.getResource(customIcon) != null ||
-                                        (!isCustom && customIcon.startsWith("/icons/")))) {
-                            iconPath = customIcon;
+                        if (customIcon != null && !customIcon.trim().isEmpty()) {
+                            // 1. 首先尝试从插件内部resources加载
+                            if (BizFileEditor.class.getResource(customIcon) != null) {
+                                iconPath = customIcon;
+                            } 
+                            // 2. 如果不是插件内部图标且是自定义组件,尝试从项目resources加载
+                            else if (isCustom) {
+                                String basePath = project.getBasePath();
+                                if (basePath != null) {
+                                    VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
+                                    if (baseDir != null) {
+                                        // 查找所有resources目录
+                                        List<VirtualFile> resourcesDirs = findAllResourcesDirectories(baseDir);
+                                        for (VirtualFile resourcesDir : resourcesDirs) {
+                                            // 移除路径开头的/,避免路径拼接问题
+                                            iconPath = customIcon.startsWith("/") ? customIcon.substring(1) : customIcon;
+                                            VirtualFile iconFile = resourcesDir.findFileByRelativePath(iconPath);
+                                            if (iconFile != null && iconFile.exists()) {
+                                                iconPath = iconFile.getPath();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // 3. 如果是插件内置组件且图标以/icons/开头,使用该图标
+                            else if (!isCustom && customIcon.startsWith("/icons/")) {
+                                iconPath = customIcon;
+                            }
                         }
                     }
 
