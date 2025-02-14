@@ -1819,10 +1819,6 @@ public class VisualLayoutPanel {
 
         //打印组件
         if (info != null && "flow-print".equals(info.getType())) {
-            if (PluginCache.springBeanClasses == null || PluginCache.springBeanClasses.isEmpty()) {
-                Messages.showInfoMessage("正在加载Spring Bean列表，请稍后再试", "提示");
-                return;
-            }
             PrintComponentSettingsDialog dialog = new PrintComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
             dialog.setModal(false); // 设置为非模态
             dialog.show();
