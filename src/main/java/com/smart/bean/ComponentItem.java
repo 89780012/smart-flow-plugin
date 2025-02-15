@@ -6,6 +6,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.smart.utils.IconUtils;
 
 import javax.swing.Icon;
+import java.awt.*;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -113,7 +114,8 @@ public class ComponentItem implements Serializable {
         in.defaultReadObject();
         System.out.println("ComponentItem deserialized: " + name + ", iconPath: " + iconPath);
         if (iconPath != null) {
-            icon = IconLoader.getIcon(iconPath, ComponentItem.class);
+            // 处理实际项目资源
+            icon = new ImageIcon(iconPath);
             System.out.println("Icon reloaded after deserialization: " + (icon != null ? "success" : "failed"));
         }
     }

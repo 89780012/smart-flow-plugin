@@ -809,27 +809,31 @@ public class VisualLayoutPanel {
 
         final Icon finalIcon = IconUtils.getIcon(item.getIconPath());;
 
-        Icon largeIcon = new Icon() {
-            @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2d.scale(2, 2);
-                finalIcon.paintIcon(c, g2d, x / 2, y / 2);
-                g2d.dispose();
-            }
+        Icon largeIcon = null;
+        if(item.getIconPath().endsWith(".png")){
+            // 处理实际项目资源
+            largeIcon = new ImageIcon(item.getIconPath());
+        }else{
+            largeIcon = new Icon() {
+                @Override
+                public void paintIcon(Component c, Graphics g, int x, int y) {
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    g2d.scale(2, 2);
+                    finalIcon.paintIcon(c, g2d, x / 2, y / 2);
+                    g2d.dispose();
+                }
+                @Override
+                public int getIconWidth() {
+                    return (int)(finalIcon.getIconWidth() * 2);
+                }
+                @Override
+                public int getIconHeight() {
+                    return (int)(finalIcon.getIconHeight() * 2);
+                }
+            };
 
-            @Override
-            public int getIconWidth() {
-                return (int)(finalIcon.getIconWidth() * 2);
-            }
-
-            @Override
-            public int getIconHeight() {
-                return (int)(finalIcon.getIconHeight() * 2);
-            }
-        };
-
+        }
         // 创建图标标签并设置固定位置
         JLabel iconLabel = new JLabel(largeIcon);
         iconLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -1664,7 +1668,6 @@ public class VisualLayoutPanel {
 
         canvasPanel.add(componentPanel);
 
-
         ComponentInfo newInfo = PluginCache.componentInfoMap.get(id);
         if(newInfo != null){ //复制组件
             newInfo.setX(location.x);
@@ -2365,24 +2368,6 @@ public class VisualLayoutPanel {
                     pane.setVisible(true);
                 }
             }
-        }
-    }
-
-    // 在VisualLayoutPanel类中添加新方法
-
-    public void addComponent(ComponentItem component) {
-        // 计算合适的位置
-        Point position = calculateNextComponentPosition();
-        
-        // 创建组件并添加到画布
-        JComponent uiComponent = createComponentUI(component);
-        if (uiComponent != null) {
-            uiComponent.setBounds(position.x, position.y, 
-                                uiComponent.getPreferredSize().width,
-                                uiComponent.getPreferredSize().height);
-//            add(uiComponent);
-//            revalidate();
-//            repaint();
         }
     }
 
