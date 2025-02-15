@@ -1,0 +1,78 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>cc.xiaonuo.smart-flow-plugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>smart-flow</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="89780012@qq.com" url="https://github.com/89780012/smart-flow-plugin">xiaonuo</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    <h2>English</h2>
+    <p>Smart Flow Plugin is a powerful workflow orchestration tool for Java SpringBoot applications. It provides:</p>
+    <ul>
+        <li>Visual workflow design and management interface</li>
+        <li>Seamless integration with smart-flow framework</li>
+        <li>Support for complex business process orchestration</li>
+        <li>Flexible configuration and customization options</li>
+    </ul>
+    <p>Perfect for developers looking to implement efficient, maintainable, and scalable workflow solutions in their SpringBoot applications.</p>
+
+    <h2>中文</h2>
+    <p>Smart Flow Plugin 是一个强大的 Java SpringBoot 工作流编排工具。主要特点：</p>
+    <ul>
+        <li>可视化的工作流设计和管理界面</li>
+        <li>与 smart-flow 框架无缝集成</li>
+        <li>支持复杂业务流程编排</li>
+        <li>灵活的配置和自定义选项</li>
+    </ul>
+    <p>适合需要在 SpringBoot 应用中实现高效、可维护、可扩展的工作流解决方案的开发者。</p>
+]]></description>
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType
+                name="BizFileAction"
+                implementationClass="com.smart.language.MyCustomFileType"
+                fieldName="INSTANCE"
+                language="BizFileAction"
+                extensions="biz"/>
+
+        <fileEditorProvider implementation="com.smart.BizFileEditorProvider"/>
+
+        <toolWindow id="Biz Files" 
+                    icon="/icons/biz.svg"
+                    anchor="right"
+                    factoryClass="com.smart.window.BizFilesToolWindowFactory"/>
+        <applicationService serviceImplementation="com.smart.settings.SmartPluginSettings"/>
+        <applicationService serviceImplementation="com.smart.service.LicenseService"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.smart.settings.SmartPluginSettingsConfigurable"
+                id="com.smart.settings.SmartPluginSettingsConfigurable"
+                displayName="Smart Flow Settings"/>
+        <postStartupActivity implementation="com.smart.startup.PluginStartupActivity"/>
+        <notificationGroup id="Smart Flow Notifications" 
+                          displayType="BALLOON"
+                          key="smart.flow.notifications"/>
+        <applicationService serviceImplementation="com.smart.service.ModelService"/>
+    </extensions>
+
+    <actions>
+<!--        <action id="com.smart.TestAction" class="com.smart.TestAction" text="测试动作" description="这是一个测试动作">-->
+<!--            <add-to-group group-id="ToolsMenu" anchor="first"/>-->
+<!--        </action>-->
+    </actions>
+</idea-plugin>
