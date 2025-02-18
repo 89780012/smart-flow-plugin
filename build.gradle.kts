@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.smart"
-version = "1.1.3"
+version = "1.1.4"
 
 repositories {
     maven { url = uri("https://maven.aliyun.com/repository/public") }
@@ -18,9 +18,9 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     //本地安装目录
-    //localPath.set("D:\\ideaIU-2023.2.win")
+    localPath.set("D:\\ideaIU-2023.2.win")
     // 会远程下载一个
-    version.set("2023.2")  // 更新到较新的IDE版本
+    //version.set("2023.2")  // 更新到较新的IDE版本
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf("com.intellij.java"))
@@ -75,4 +75,6 @@ sourceSets {
 dependencies {
     implementation("org.json:json:20231013")
     implementation("org.jetbrains:annotations:24.0.0")
+    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+    implementation("com.google.code.gson:gson:2.8.9")
 }

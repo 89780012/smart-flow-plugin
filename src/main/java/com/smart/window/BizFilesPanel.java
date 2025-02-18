@@ -38,15 +38,23 @@ public class BizFilesPanel extends JPanel {
     private final Tree fileTree;
     private final DefaultTreeModel treeModel;
     private SearchTextField searchField;
+    private ApiDebugPanel debugPanel;
     
     public BizFilesPanel(Project project) {
         this.project = project;
         setLayout(new BorderLayout());
         setBorder(JBUI.Borders.empty());
 
-        // 创建顶部工具栏
-        JPanel topPanel = createToolbarPanel();
-        add(topPanel, BorderLayout.NORTH);
+        // 创建上下分割面板
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setBorder(JBUI.Borders.empty());
+        
+        // 创建上层面板
+        JPanel topPanel = new JPanel(new BorderLayout());
+        
+        // 创建工具栏
+        JPanel toolbarPanel = createToolbarPanel();
+        topPanel.add(toolbarPanel, BorderLayout.NORTH);
 
         // 创建文件树
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(project.getName());
@@ -56,15 +64,27 @@ public class BizFilesPanel extends JPanel {
         // 设置树的渲染器和基本属性
         setupFileTree();
         
-        // 添加到滚动面板
+        // 添加文件树到滚动面板
         JScrollPane scrollPane = new JBScrollPane(fileTree);
         scrollPane.setBorder(JBUI.Borders.empty());
-        add(scrollPane, BorderLayout.CENTER);
+        topPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // 创建下层调试面板
+        debugPanel = new ApiDebugPanel(project);
+        
+        // 添加到分割面板
+        splitPane.setTopComponent(topPanel);
+        splitPane.setBottomComponent(debugPanel);
+        
+        // 设置分割比例
+        splitPane.setResizeWeight(0.6);
+        
+        add(splitPane, BorderLayout.CENTER);
 
         // 初始加载项目文件
         refreshProjectFiles();
     }
-
+    
     private JPanel createToolbarPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBorder(JBUI.Borders.empty(0, 0, 1, 0)); // 只添加底部边框
@@ -161,8 +181,8 @@ public class BizFilesPanel extends JPanel {
                 
                 if (userObject instanceof BizFileInfo) {
                     BizFileInfo bizFileInfo = (BizFileInfo) userObject;
-                    // 直接打开文件
-                    FileEditorManager.getInstance(project).openFile(bizFileInfo.getFile(), true);
+                    // 填充接口调试面板
+                    debugPanel.fillFromBizFile(bizFileInfo);
                 }
             }
         }

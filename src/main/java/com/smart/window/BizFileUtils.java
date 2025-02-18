@@ -2,6 +2,8 @@ package com.smart.window;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.smart.enums.DataType;
+import com.smart.enums.RequireType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -50,10 +52,49 @@ public class BizFileUtils {
                 String protocol = getElementText(root, "protocol");
                 String method = getElementText(root, "method");
                 
-                // 构建显示信息
-                String displayMethod = method + " " + protocol;
+                // 构建BizFileInfo对象
+                BizFileInfo bizFileInfo = new BizFileInfo(file, url, method, name);
                 
-                return new BizFileInfo(file, url, displayMethod, name);
+                // 解析参数信息
+                NodeList paramsList = root.getElementsByTagName("params");
+                if (paramsList != null && paramsList.getLength() > 0) {
+                    Element paramsElement = (Element) paramsList.item(0);
+                    NodeList paramNodes = paramsElement.getElementsByTagName("param");
+                    
+                    List<BizFileInfo.ParamInfo> params = new ArrayList<>();
+                    for (int i = 0; i < paramNodes.getLength(); i++) {
+                        Element paramElement = (Element) paramNodes.item(i);
+                        String paramName = getElementText(paramElement, "name");
+                        String paramValue = getElementText(paramElement, "value");
+                        
+                        // 解析类型为DataType枚举
+                        String typeStr = getElementText(paramElement, "type");
+                        DataType paramType = DataType.STRING; // 默认为String类型
+                        try {
+                            paramType = DataType.valueOf(typeStr.toUpperCase());
+                        } catch (IllegalArgumentException ignored) {}
+                        
+                        // 解析是否必填为RequireType枚举
+                        String requiredStr = getElementText(paramElement, "required");
+                        RequireType required = RequireType.no; // 默认为非必填
+                        try {
+                            int requiredValue = Integer.parseInt(requiredStr);
+                            required = RequireType.getByValue(requiredValue);
+                            if (required == null) {
+                                required = RequireType.no;
+                            }
+                        } catch (NumberFormatException ignored) {}
+                        
+                        // 获取示例值
+                        String example = getElementText(paramElement, "example");
+                        
+                        params.add(new BizFileInfo.ParamInfo(paramName, paramValue, paramType, required, example));
+                    }
+                    
+                    bizFileInfo.setParams(params);
+                }
+                
+                return bizFileInfo;
             }
         } catch (Exception e) {
             // 如果解析失败，返回只包含文件信息的对象
