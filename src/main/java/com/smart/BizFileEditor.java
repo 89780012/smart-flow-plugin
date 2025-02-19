@@ -59,17 +59,14 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     private final JPanel mainPanel;
     private SidebarPanel sidebarPanel;
     private VisualLayoutPanel visualLayoutPanel;
-
     //局部属性
     private Map<String, Object> propertyMap = new HashMap();
 
     private JPanel leftPanel;
-
     private JScrollPane functionPanel;
     private JSplitPane leftSplitPane;
     private JToggleButton componentTab;
     private JToggleButton functionTab;
-    private JButton deployButton; // 重新部
     private ResizablePanel leftComponentTree; // 左侧组件树
     private JPanel componentTreePanel; //组件树
     private JPanel centerPanel;
@@ -79,7 +76,6 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     // 添加成员变量
     private JToggleButton demoTab;
     private DemoTreePanel demoPanel;
-
     private ArchiveManager archiveManager;
     private JToggleButton archiveTab;
 
@@ -205,7 +201,6 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         // 添加击事件
         button.addActionListener(e -> {
             boolean isSelected = button.isSelected();
-
             if (tooltip.equals("AI")) {
                 if (isSelected) {
                     componentTab.setSelected(false);
@@ -227,7 +222,11 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                         leftSplitPane.setTopComponent(null);
                     }
                     // 恢复到记录的原始宽度
-                    leftComponentTree.setPreferredSize(new Dimension(originalComponentTreeWidth, -1));
+                    if(originalComponentTreeWidth > 0){
+                        leftComponentTree.setPreferredSize(new Dimension(originalComponentTreeWidth, -1));
+                    }else{
+                        leftComponentTree.setPreferredSize(new Dimension(500, -1));
+                    }
                     leftComponentTree.revalidate();
                     leftComponentTree.repaint();
                 }
@@ -239,7 +238,11 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                     leftSplitPane.setTopComponent(componentTreePanel);
                     leftSplitPane.setDividerLocation(0.5);
                     // 恢复到记录的原始宽度
-                    leftComponentTree.setPreferredSize(new Dimension(originalComponentTreeWidth, -1));
+                    if(originalComponentTreeWidth > 0){
+                        leftComponentTree.setPreferredSize(new Dimension(originalComponentTreeWidth, -1));
+                    }else{
+                        leftComponentTree.setPreferredSize(new Dimension(220, -1));
+                    }
                     leftComponentTree.revalidate();
                     leftComponentTree.repaint();
                 } else {

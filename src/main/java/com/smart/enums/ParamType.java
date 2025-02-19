@@ -1,8 +1,8 @@
 package com.smart.enums;
 
 public enum ParamType {
-    PARAM(0, "入参"),
-    RESULT(1, "返回");
+    QUERY(0, "Query"),
+    BODY(1, "Body");
 
 
     private final int value;

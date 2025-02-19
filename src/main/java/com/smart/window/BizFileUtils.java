@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.smart.enums.DataType;
 import com.smart.enums.RequireType;
+import com.smart.enums.ParamType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -54,6 +55,7 @@ public class BizFileUtils {
                 
                 // 构建BizFileInfo对象
                 BizFileInfo bizFileInfo = new BizFileInfo(file, url, method, name);
+                bizFileInfo.setProtocol(protocol);
                 
                 // 解析参数信息
                 NodeList paramsList = root.getElementsByTagName("params");
@@ -65,13 +67,13 @@ public class BizFileUtils {
                     for (int i = 0; i < paramNodes.getLength(); i++) {
                         Element paramElement = (Element) paramNodes.item(i);
                         String paramName = getElementText(paramElement, "name");
-                        String paramValue = getElementText(paramElement, "value");
+                        String paramValue = "";
                         
                         // 解析类型为DataType枚举
                         String typeStr = getElementText(paramElement, "type");
                         DataType paramType = DataType.STRING; // 默认为String类型
                         try {
-                            paramType = DataType.valueOf(typeStr.toUpperCase());
+                            paramType = DataType.getByValue(Integer.parseInt(typeStr));
                         } catch (IllegalArgumentException ignored) {}
                         
                         // 解析是否必填为RequireType枚举
@@ -86,9 +88,9 @@ public class BizFileUtils {
                         } catch (NumberFormatException ignored) {}
                         
                         // 获取示例值
-                        String example = getElementText(paramElement, "example");
+                        String defaultValue = getElementText(paramElement, "defaultValue");
                         
-                        params.add(new BizFileInfo.ParamInfo(paramName, paramValue, paramType, required, example));
+                        params.add(new BizFileInfo.ParamInfo(paramName, paramValue, paramType, required, defaultValue));
                     }
                     
                     bizFileInfo.setParams(params);

@@ -93,7 +93,7 @@ public class BizFilesPanel extends JPanel {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         
         // 刷新按钮
-        actionGroup.add(new AnAction("Refresh", "Refresh file list", AllIcons.Actions.Refresh) {
+        actionGroup.add(new AnAction("刷新", "刷新文件列表", AllIcons.Actions.Refresh) {
             @Override
             public void actionPerformed(AnActionEvent e) {
                 refreshProjectFiles();
@@ -101,7 +101,7 @@ public class BizFilesPanel extends JPanel {
         });
         
         // 展开全部按钮
-        actionGroup.add(new AnAction("Expand All", "Expand all nodes", AllIcons.Actions.Expandall) {
+        actionGroup.add(new AnAction("展开全部", "展开全部节点", AllIcons.Actions.Expandall) {
             @Override
             public void actionPerformed(AnActionEvent e) {
                 TreeUtil.expandAll(fileTree);
@@ -109,7 +109,7 @@ public class BizFilesPanel extends JPanel {
         });
         
         // 折叠全部按钮
-        actionGroup.add(new AnAction("Collapse All", "Collapse all nodes", AllIcons.Actions.Collapseall) {
+        actionGroup.add(new AnAction("折叠全部", "折叠全部按钮", AllIcons.Actions.Collapseall) {
             @Override
             public void actionPerformed(AnActionEvent e) {
                 TreeUtil.collapseAll(fileTree, 0);
@@ -226,19 +226,19 @@ public class BizFilesPanel extends JPanel {
                 }
                     
                 // 目录节点的右键菜单
-                JMenuItem createFolder = new JMenuItem("New Folder", AllIcons.Nodes.Folder);
+                JMenuItem createFolder = new JMenuItem("创建文件夹", AllIcons.Nodes.Folder);
                 createFolder.addActionListener(e1 -> createNewFolder(directory));
                 popupMenu.add(createFolder);
                 
                 popupMenu.addSeparator();
                 
-                JMenuItem createBizFile = new JMenuItem("New Biz File", AllIcons.FileTypes.Any_type);
+                JMenuItem createBizFile = new JMenuItem("创建biz文件", AllIcons.FileTypes.Any_type);
                 createBizFile.addActionListener(e1 -> createNewBizFile(directory));
                 popupMenu.add(createBizFile);
                 
                 popupMenu.addSeparator();
 
-                JMenuItem deleteItem = new JMenuItem("Delete", AllIcons.Actions.DeleteTag);
+                JMenuItem deleteItem = new JMenuItem("删除", AllIcons.Actions.DeleteTag);
                 if (userObject instanceof CompressedDirectory) {
                     CompressedDirectory compDir = (CompressedDirectory) userObject;
                     deleteItem.addActionListener(e1 -> deleteCompressedDirectory(compDir));
@@ -249,20 +249,26 @@ public class BizFilesPanel extends JPanel {
                 
             } else if (userObject instanceof BizFileInfo) {
                 BizFileInfo bizFileInfo = (BizFileInfo) userObject;
+
+                JMenuItem openItem = new JMenuItem("打开当前文件", AllIcons.Actions.Menu_open);
+                openItem.addActionListener(e1 -> openBizFile(bizFileInfo));
+                popupMenu.add(openItem);
                 
-                JMenuItem renameItem = new JMenuItem("Rename", AllIcons.Actions.Edit);
+                popupMenu.addSeparator();
+                
+                JMenuItem renameItem = new JMenuItem("重命名", AllIcons.Actions.Edit);
                 renameItem.addActionListener(e1 -> renameBizFile(bizFileInfo));
                 popupMenu.add(renameItem);
                 
                 popupMenu.addSeparator();
                 
-                JMenuItem deleteItem = new JMenuItem("Delete", AllIcons.Actions.DeleteTag);
+                JMenuItem deleteItem = new JMenuItem("删除", AllIcons.Actions.DeleteTag);
                 deleteItem.addActionListener(e1 -> deleteBizFile(bizFileInfo));
                 popupMenu.add(deleteItem);
             }
         } else {
             // 多选状态下只显示删除选项
-            JMenuItem deleteItem = new JMenuItem("Delete Selected Items", AllIcons.Actions.DeleteTag);
+            JMenuItem deleteItem = new JMenuItem("删除选中项", AllIcons.Actions.DeleteTag);
             TreePath[] finalSelectedPaths = selectedPaths;
             deleteItem.addActionListener(e1 -> deleteSelectedItems(finalSelectedPaths));
             popupMenu.add(deleteItem);
@@ -303,8 +309,8 @@ public class BizFilesPanel extends JPanel {
     private void createNewBizFile(VirtualFile directory) {
         String fileName = Messages.showInputDialog(
             project,
-            "Enter biz file name:",
-            "Create New Biz File",
+            "请输入biz文件名称:",
+            "创建biz文件",
             Messages.getQuestionIcon()
         );
 
@@ -482,8 +488,8 @@ public class BizFilesPanel extends JPanel {
     private void renameBizFile(BizFileInfo bizFileInfo) {
         String newName = Messages.showInputDialog(
             project,
-            "Enter new name:",
-            "Rename File",
+            "创建新文件:",
+            "重命名",
             Messages.getQuestionIcon(),
             bizFileInfo.getFile().getNameWithoutExtension(),
             null
@@ -521,8 +527,8 @@ public class BizFilesPanel extends JPanel {
     private void deleteBizFile(BizFileInfo bizFileInfo) {
         int result = Messages.showYesNoDialog(
             project,
-            "Are you sure you want to delete '" + bizFileInfo.getFile().getName() + "'?",
-            "Delete File",
+            "你确定删除 '" + bizFileInfo.getFile().getName() + "'?",
+            "删除文件",
             Messages.getQuestionIcon()
         );
         
@@ -557,8 +563,8 @@ public class BizFilesPanel extends JPanel {
         // 创建文件夹对话框
         CreateDirectoryDialog dialog = new CreateDirectoryDialog(
             project,
-            "Create New Directory",
-            "Enter a new directory name:",
+            "创建新文件夹",
+            "请输入新文件夹名称:",
             packagePath,  // 传入包路径作为初始值
             AllIcons.Nodes.Folder
         );
@@ -709,39 +715,6 @@ public class BizFilesPanel extends JPanel {
         }
     }
 
-    private VirtualFile findFirstBizParent(VirtualFile dir) {
-        Queue<VirtualFile> queue = new LinkedList<>();
-        queue.offer(dir);
-        
-        while (!queue.isEmpty()) {
-            VirtualFile current = queue.poll();
-            if (containsBizFiles(current)) {
-                return current;
-            }
-            
-            VirtualFile[] children = current.getChildren();
-            for (VirtualFile child : children) {
-                if (child.isDirectory() && !child.getName().equals("target") && !child.getName().startsWith(".")) {
-                    queue.offer(child);
-                }
-            }
-        }
-        return null;
-    }
-
-    private String createCompressedPath(VirtualFile start, VirtualFile end) {
-        List<String> pathParts = new ArrayList<>();
-        VirtualFile current = start;
-        
-        while (current != null && !current.equals(end)) {
-            pathParts.add(current.getName());
-            current = current.getParent();
-        }
-        
-        Collections.reverse(pathParts);
-        return String.join(".", pathParts);
-    }
-
     // 添加新的辅助方法来获取可压缩的路径
     private Pair<String, VirtualFile> getCompressiblePath(VirtualFile startDir) {
         StringBuilder path = new StringBuilder(startDir.getName());
@@ -853,25 +826,6 @@ public class BizFilesPanel extends JPanel {
         
         // 移除重复的路径部分并合并
         return String.join(".", new LinkedHashSet<>(pathParts));
-    }
-
-    // 添加获取压缩目录完整路径的辅助方法
-    private String getCompressedFullPath(VirtualFile directory) {
-        List<String> pathParts = new ArrayList<>();
-        VirtualFile current = directory;
-        String basePath = project.getBasePath();
-        VirtualFile projectRoot = basePath != null ? LocalFileSystem.getInstance().findFileByPath(basePath) : null;
-        
-        // 从当前目录向上遍历到项目根目录
-        while (current != null && !current.equals(projectRoot)) {
-            // 跳过src目录
-            if (!"src".equals(current.getName())) {
-                pathParts.add(0, current.getName());
-            }
-            current = current.getParent();
-        }
-        
-        return String.join(".", pathParts);
     }
 
     // 添加新的删除压缩目录的方法
@@ -1011,7 +965,7 @@ public class BizFilesPanel extends JPanel {
         }
         
         // 显示确认对话框
-        String message = String.format("Are you sure you want to delete these %d items?\n%s", 
+        String message = String.format("你确定要删除这 %d 个文件吗?\n%s",
             itemNames.size(), 
             String.join("\n", itemNames)
         );
@@ -1019,7 +973,7 @@ public class BizFilesPanel extends JPanel {
         int result = Messages.showYesNoDialog(
             project,
             message,
-            "Delete Multiple Items",
+            "多选删除",
             Messages.getQuestionIcon()
         );
         
@@ -1137,5 +1091,16 @@ public class BizFilesPanel extends JPanel {
         }
         
         return null;
+    }
+
+    private void openBizFile(BizFileInfo bizFileInfo) {
+        try {
+            VirtualFile file = bizFileInfo.getFile();
+            if (file != null) {
+                FileEditorManager.getInstance(project).openFile(file, true);
+            }
+        } catch (Exception e) {
+            Messages.showErrorDialog(project, "Failed to open file: " + e.getMessage(), "Error");
+        }
     }
 } 

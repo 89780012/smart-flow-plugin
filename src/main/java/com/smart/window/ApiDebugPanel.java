@@ -9,6 +9,7 @@ import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import com.smart.enums.DataType;
 import com.smart.enums.RequireType;
+import com.smart.enums.ParamType;
 import com.smart.service.SettingService;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -34,20 +35,25 @@ public class ApiDebugPanel extends JPanel {
     private JTextField baseUrlField;
     private JComboBox<String> methodCombo;
     private JTextField urlField;
-    private JTable paramsTable;
+    private JTable queryParamsTable;
+    private JTextArea bodyTextArea;
     private JTable headersTable;
-    private DefaultTableModel paramsModel;
+    private DefaultTableModel queryParamsModel;
     private DefaultTableModel headersModel;
     private JButton sendButton;
     private JTextArea responseArea;
     private JTextArea headersArea;
     private JLabel statusLabel;
     private JTabbedPane contentTabs;
+    private JTabbedPane parametersTabs;
 
     public ApiDebugPanel(Project project) {
         this.project = project;
         setLayout(new BorderLayout());
         setBorder(JBUI.Borders.empty(5));
+        
+        // 设置首选大小
+        setPreferredSize(new Dimension(650, 650));
 
         // 创建顶部请求面板
         JPanel requestPanel = createRequestPanel();
@@ -58,13 +64,13 @@ public class ApiDebugPanel extends JPanel {
         contentTabs.setBorder(JBUI.Borders.empty(5, 0, 0, 0));
         
         // 添加Headers选项卡
-        contentTabs.addTab("Headers", AllIcons.Nodes.Parameter, createHeadersPanel());
+        contentTabs.addTab("请求头", AllIcons.Nodes.Parameter, createHeadersPanel());
         
         // 添加Parameters选项卡
-        contentTabs.addTab("Parameters", AllIcons.Nodes.Parameter, createParametersPanel());
+        contentTabs.addTab("请求参数", AllIcons.Nodes.Parameter, createParametersPanel());
         
         // 添加Response选项卡
-        contentTabs.addTab("Response", AllIcons.Debugger.Console, createResponsePanel());
+        contentTabs.addTab("响应", AllIcons.Debugger.Console, createResponsePanel());
         
         add(contentTabs, BorderLayout.CENTER);
         
@@ -82,7 +88,7 @@ public class ApiDebugPanel extends JPanel {
         baseUrlPanel.add(protocolCombo);
         
         baseUrlField = new JTextField(30);
-        baseUrlPanel.add(new JLabel("Base URL:"));
+        baseUrlPanel.add(new JLabel("Base DOMAIN:"));
         baseUrlPanel.add(baseUrlField);
         
         JButton saveBaseUrlButton = new JButton("保存", AllIcons.Actions.MenuSaveall);
@@ -148,24 +154,21 @@ public class ApiDebugPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createParametersPanel() {
+    private JTabbedPane createParametersPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(JBUI.Borders.empty());
 
-        // 创建参数表格
-        String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
-        paramsModel = new DefaultTableModel(columnNames, 0);
-        paramsTable = new JBTable(paramsModel);
+        // 创建参数选项卡
+        parametersTabs = new JTabbedPane();
         
-        // 设置表格列宽
-        paramsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
-        paramsTable.getColumnModel().getColumn(1).setPreferredWidth(200);
-        paramsTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-        paramsTable.getColumnModel().getColumn(3).setPreferredWidth(80);
-        paramsTable.getColumnModel().getColumn(4).setPreferredWidth(150);
-
-        panel.add(new JBScrollPane(paramsTable), BorderLayout.CENTER);
-        return panel;
+        // Query Parameters选项卡
+        parametersTabs.addTab("Query参数", createQueryParamsPanel());
+        
+        // Body Parameters选项卡
+        parametersTabs.addTab("Body", createBodyPanel());
+        
+        panel.add(parametersTabs, BorderLayout.CENTER);
+        return parametersTabs;
     }
 
     private JPanel createResponsePanel() {
@@ -174,20 +177,72 @@ public class ApiDebugPanel extends JPanel {
 
         // 创建响应选项卡
         JTabbedPane responseTabs = new JTabbedPane();
-        
+
         // 响应内容选项卡
         responseArea = new JTextArea();
         responseArea.setEditable(false);
-        responseTabs.addTab("Body", AllIcons.Actions.ShowCode, new JBScrollPane(responseArea));
+        responseTabs.addTab("响应日志", AllIcons.Actions.ShowCode, new JBScrollPane(responseArea));
 
         // 响应头选项卡
         headersArea = new JTextArea();
         headersArea.setEditable(false);
-        responseTabs.addTab("Headers", AllIcons.Nodes.Parameter, new JBScrollPane(headersArea));
+        responseTabs.addTab("响应头", AllIcons.Nodes.Parameter, new JBScrollPane(headersArea));
 
         panel.add(responseTabs, BorderLayout.CENTER);
         return panel;
     }
+
+    private JPanel createQueryParamsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // 创建查询参数表格
+        String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
+        queryParamsModel = new DefaultTableModel(columnNames, 0);
+        queryParamsTable = new JBTable(queryParamsModel);
+        
+        // 设置表格列宽
+        queryParamsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
+        queryParamsTable.getColumnModel().getColumn(1).setPreferredWidth(200);
+        queryParamsTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        queryParamsTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+        queryParamsTable.getColumnModel().getColumn(4).setPreferredWidth(150);
+
+        panel.add(new JBScrollPane(queryParamsTable), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createBodyPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // 创建请求体文本区域
+        bodyTextArea = new JTextArea();
+        bodyTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        
+        // 添加工具栏
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton formatButton = new JButton("格式化", AllIcons.Actions.PrettyPrint);
+        formatButton.addActionListener(e -> formatJsonBody());
+        toolbar.add(formatButton);
+        
+        panel.add(toolbar, BorderLayout.NORTH);
+        panel.add(new JBScrollPane(bodyTextArea), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void formatJsonBody() {
+        try {
+            String text = bodyTextArea.getText();
+            if (text != null && !text.isEmpty()) {
+                JsonElement jsonElement = JsonParser.parseString(text);
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                bodyTextArea.setText(gson.toJson(jsonElement));
+            }
+        } catch (Exception e) {
+            // 如果不是有效的JSON，保持原样
+        }
+    }
+
+
     
     private void loadSettings() {
         SettingService settings = SettingService.getInstance(project);
@@ -202,7 +257,7 @@ public class ApiDebugPanel extends JPanel {
         
         // 显示保存成功通知
         NotificationGroupManager.getInstance()
-            .getNotificationGroup("Smart Flow Plugin")
+            .getNotificationGroup("Smart Flow Notifications")
             .createNotification("Base URL设置已保存", NotificationType.INFORMATION)
             .notify(project);
     }
@@ -214,24 +269,45 @@ public class ApiDebugPanel extends JPanel {
         // 设置URL
         urlField.setText(bizFileInfo.getUrl());
         
-        // 清空并填充参数表格
-        while (paramsModel.getRowCount() > 0) {
-            paramsModel.removeRow(0);
+        // 清空参数
+        while (queryParamsModel.getRowCount() > 0) {
+            queryParamsModel.removeRow(0);
         }
+        bodyTextArea.setText("");
         
-        // 填充参数表格
-        for (BizFileInfo.ParamInfo param : bizFileInfo.getParams()) {
-            paramsModel.addRow(new Object[]{
-                param.getName(),
-                param.getValue(),
-                param.getType().getDisplayName(),
-                param.getRequired().getDisplayName(),
-                param.getExample()
-            });
+        // 检查是否是JSON协议
+        boolean isJsonProtocol = "application/json".equalsIgnoreCase(bizFileInfo.getProtocol());
+        
+        if (isJsonProtocol) {
+            // 如果是JSON协议，将所有参数转换为JSON格式放入body
+            Map<String, Object> bodyParams = new HashMap<>();
+            for (BizFileInfo.ParamInfo param : bizFileInfo.getParams()) {
+                bodyParams.put(param.getName(), param.getDefaultValue());
+            }
+            
+            // 格式化JSON并设置到body区域
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            bodyTextArea.setText(gson.toJson(bodyParams));
+            
+            // 切换到Body选项卡
+            contentTabs.setSelectedIndex(1);
+            parametersTabs.setSelectedIndex(1);
+        } else {
+            // 非JSON协议，参数放入查询参数表格
+            for (BizFileInfo.ParamInfo param : bizFileInfo.getParams()) {
+                queryParamsModel.addRow(new Object[]{
+                    param.getName(),
+                    param.getValue(),
+                    param.getType().getDisplayName(),
+                    param.getRequired().getDisplayName(),
+                    param.getDefaultValue()
+                });
+            }
+
+            // 切换到Body选项卡
+            contentTabs.setSelectedIndex(1);
+            parametersTabs.setSelectedIndex(0);
         }
-        
-        // 切换到Parameters选项卡
-        contentTabs.setSelectedIndex(1);
     }
     
     private void sendRequest() {
@@ -259,6 +335,26 @@ public class ApiDebugPanel extends JPanel {
             // 创建请求
             HttpRequestBase request;
             String method = (String) methodCombo.getSelectedItem();
+            
+            // 收集查询参数
+            Map<String, Object> queryParams = new HashMap<>();
+            int queryRowCount = queryParamsModel.getRowCount();
+            for (int i = 0; i < queryRowCount; i++) {
+                String paramName = (String) queryParamsModel.getValueAt(i, 0);
+                String example = (String) queryParamsModel.getValueAt(i, 1);
+                if (example != null && !example.isEmpty()) {
+                    queryParams.put(paramName, example);
+                }
+            }
+            
+            // 添加查询参数到URL
+            if (!queryParams.isEmpty()) {
+                StringBuilder urlBuilder = new StringBuilder(fullUrl);
+                urlBuilder.append("?");
+                queryParams.forEach((name, value) -> 
+                    urlBuilder.append(name).append("=").append(value).append("&"));
+                fullUrl = urlBuilder.substring(0, urlBuilder.length() - 1);
+            }
             
             switch (method) {
                 case "GET":
@@ -289,21 +385,9 @@ public class ApiDebugPanel extends JPanel {
                 }
             }
 
-            // 收集参数
-            Map<String, Object> params = new HashMap<>();
-            int rowCount = paramsModel.getRowCount();
-            for (int i = 0; i < rowCount; i++) {
-                String paramName = (String) paramsModel.getValueAt(i, 0);
-                String example = (String) paramsModel.getValueAt(i, 4);
-                if (example != null && !example.isEmpty()) {
-                    params.put(paramName, example);
-                }
-            }
-
-            // 准备请求体
-            String requestBody = "";
-            if (request instanceof HttpEntityEnclosingRequestBase && !params.isEmpty()) {
-                requestBody = new GsonBuilder().setPrettyPrinting().create().toJson(params);
+            // 获取请求体
+            String requestBody = bodyTextArea.getText().trim();
+            if (request instanceof HttpEntityEnclosingRequestBase && !requestBody.isEmpty()) {
                 ((HttpEntityEnclosingRequestBase) request).setEntity(
                     new StringEntity(requestBody, StandardCharsets.UTF_8));
                 if (!request.containsHeader("Content-Type")) {
@@ -324,9 +408,21 @@ public class ApiDebugPanel extends JPanel {
                     requestInfo.append(String.format("%s: %s\n", name, value)));
             }
             
-            if (!params.isEmpty()) {
-                requestInfo.append("\n=== 请求参数 ===\n");
-                requestInfo.append(requestBody).append("\n");
+            if (!queryParams.isEmpty()) {
+                requestInfo.append("\n=== 查询参数 ===\n");
+                queryParams.forEach((name, value) ->
+                    requestInfo.append(String.format("%s: %s\n", name, value)));
+            }
+            
+            if (!requestBody.isEmpty()) {
+                requestInfo.append("\n=== 请求体 ===\n");
+                try {
+                    JsonElement jsonElement = JsonParser.parseString(requestBody);
+                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    requestInfo.append(gson.toJson(jsonElement)).append("\n");
+                } catch (Exception e) {
+                    requestInfo.append(requestBody).append("\n");
+                }
             }
             
             requestInfo.append("\n=== 响应信息 ===\n");

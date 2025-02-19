@@ -68,8 +68,6 @@ public class VisualLayoutPanel {
 
     private List<ComponentSelectionListener> selectionListeners = new ArrayList<>();
 
-    //连接线颜色-有表达式
-    private static final Color NORMAL_LINE_COLOR = new Color(0, 120, 215); // 原来的蓝色
     private static final Color EXPRESSION_LINE_COLOR = new Color(255, 152, 0); // 使用橙色
 
 
@@ -78,7 +76,6 @@ public class VisualLayoutPanel {
     private JToggleButton selectedButton; // 当前选中的按钮
     private static final String PAN_TOOL = "pan";
     private static final String SELECT_TOOL = "select";
-    private static final String CUNDANG_TOOL = "cundang";
     private String currentTool = SELECT_TOOL; // 默认为选择工具
 
     private VirtualFile currentFile;

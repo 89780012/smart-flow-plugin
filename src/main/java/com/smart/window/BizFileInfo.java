@@ -3,6 +3,7 @@ package com.smart.window;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.smart.enums.DataType;
 import com.smart.enums.RequireType;
+import com.smart.enums.ParamType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class BizFileInfo {
     private String url = "";
     private String method = "";
     private String name = "";
+    private String protocol = "";
     private List<ParamInfo> params = new ArrayList<>();
     
     public BizFileInfo(VirtualFile file) {
@@ -32,6 +34,8 @@ public class BizFileInfo {
     public void setMethod(String method) { this.method = method; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getProtocol() { return protocol; }
+    public void setProtocol(String protocol) { this.protocol = protocol; }
     public List<ParamInfo> getParams() { return params; }
     public void setParams(List<ParamInfo> params) { this.params = params; }
     
@@ -41,14 +45,14 @@ public class BizFileInfo {
         private String value;
         private DataType type;
         private RequireType required;
-        private String example; // 添加示例值字段
+        private String defaultValue;
         
-        public ParamInfo(String name, String value, DataType type, RequireType required, String example) {
+        public ParamInfo(String name, String value, DataType type, RequireType required, String defaultValue) {
             this.name = name;
             this.value = value;
             this.type = type;
             this.required = required;
-            this.example = example;
+            this.defaultValue = defaultValue;
         }
         
         // Getters and setters
@@ -60,7 +64,13 @@ public class BizFileInfo {
         public void setType(DataType type) { this.type = type; }
         public RequireType getRequired() { return required; }
         public void setRequired(RequireType required) { this.required = required; }
-        public String getExample() { return example; }
-        public void setExample(String example) { this.example = example; }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+        }
     }
 } 
