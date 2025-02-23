@@ -45,17 +45,22 @@ import java.nio.charset.StandardCharsets;
 public class PropertyPanel extends JPanel {
     private JBTabbedPane tabbedPane;
     private Map<String, Object> propertyMap;
-    private boolean isUpdating = false;
     JTextArea previewArea = new JTextArea();
 
     JPanel propertyPanel;
     JPanel inputParamsPanel;
     JPanel outputConfigPanel;
+    JPanel bodyPanel;
+
+    private DefaultTableModel queryParamsModel;
+    private DefaultTableModel bodyParamsModel;
+    private JTextArea jsonTextArea; // application/json 协议时保存的值
 
     VirtualFile file;
 
     JButton generateBtn = null;
 
+    JComboBox<HttpProtocol> protocolCombo = null; //协议名称
 
     public PropertyPanel(Map<String, Object> propertyMap, VirtualFile virtualFile) {
         this.propertyMap = propertyMap;
@@ -82,6 +87,60 @@ public class PropertyPanel extends JPanel {
 
         // 初始化加载参数
         loadParamsFromPropertyMap();
+
+        // 添加协议选择监听器
+        protocolCombo.addActionListener(e -> updateBodyPanel());
+    }
+
+    private void updateBodyPanel() {
+        // 获取当前选择的协议
+        String selectedProtocol = ((HttpProtocol) protocolCombo.getSelectedItem()).getValue();
+        
+        // 清除 bodyPanel 的所有组件
+        bodyPanel.removeAll();
+
+        jsonTextArea = new JTextArea();
+        if ("application/json".equals(selectedProtocol)) {
+            // 使用 JTextArea
+            jsonTextArea.setLineWrap(true);
+            jsonTextArea.setWrapStyleWord(true);
+            JScrollPane jsonScrollPane = new JScrollPane(jsonTextArea);
+            bodyPanel.add(jsonScrollPane, BorderLayout.CENTER);
+        } else {
+            // 使用表格
+            String[] columns = {"参数名", "参数类型", "是否必填", "举例", "描述"};
+            bodyParamsModel = new DefaultTableModel(columns, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return true;
+                }
+                @Override
+                public Class<?> getColumnClass(int columnIndex) {
+                    if (columnIndex == 1) return DataType.class;
+                    if (columnIndex == 2) return RequireType.class;
+                    return String.class;
+                }
+            };
+            
+            JBTable bodyTable = createParamTable(bodyParamsModel);
+            
+            // Body参数工具栏
+            JPanel bodyToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JButton addBodyButton = new JButton("添加参数");
+            JButton removeBodyButton = new JButton("删除参数");
+            JButton importBodyButton = new JButton("导入参数");
+            setupTableButtons(addBodyButton, removeBodyButton, importBodyButton,  bodyParamsModel, bodyTable);
+            bodyToolbar.add(addBodyButton);
+            bodyToolbar.add(removeBodyButton);
+            bodyToolbar.add(importBodyButton);
+
+            bodyPanel.add(bodyToolbar, BorderLayout.NORTH);
+            bodyPanel.add(new JBScrollPane(bodyTable), BorderLayout.CENTER);
+        }
+
+        // 重新验证和重绘 bodyPanel
+        bodyPanel.revalidate();
+        bodyPanel.repaint();
     }
 
     // 添加新的辅助方法来创建属性行，并包含按钮
@@ -155,7 +214,7 @@ public class PropertyPanel extends JPanel {
         panel.add(Box.createVerticalStrut(5));
         
         // 请求协议
-        JComboBox<HttpProtocol> protocolCombo = new JComboBox<>(HttpProtocol.values());
+        protocolCombo = new JComboBox<>(HttpProtocol.values());
         protocolCombo.setSelectedItem(HttpProtocol.fromValue(String.valueOf(propertyMap.get("protocol"))));
         protocolCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, JBUI.scale(24)));
         JPanel protocolPanel = createPropertyRow("请求协议:", protocolCombo);
@@ -220,48 +279,93 @@ public class PropertyPanel extends JPanel {
         return rowPanel;
     }
 
-    private DefaultTableModel inputModel ;
     private JPanel createInputParamsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        JButton saveButton = new JButton("保存", AllIcons.Actions.MenuSaveall);
+        saveButton.addActionListener(e -> {
+            updateParamsToPropertyMap();
+            SwingUtilities.invokeLater(() -> {
+                JBPopupFactory.getInstance()
+                        .createBalloonBuilder(new JLabel("保存成功"))
+                        .setFadeoutTime(3000)
+                        .createBalloon()
+                        .show(RelativePoint.getNorthWestOf(saveButton), Balloon.Position.above);
+            });
+        });
+        // 1. 基础配置区域
+        JPanel basicConfig = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        basicConfig.setBorder(BorderFactory.createTitledBorder("功能操作区"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = JBUI.insets(5);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.2;
+        basicConfig.add(saveButton);
+        panel.add(basicConfig, BorderLayout.NORTH);
+
+        // 创建分割面板
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(3);
         
-        // 创建参数表格
+        // 创建Query参数面板
+        JPanel queryPanel = new JPanel(new BorderLayout());
+        queryPanel.setBorder(BorderFactory.createTitledBorder("Query参数配置"));
+
+        // 设置最小高度
+        queryPanel.setMinimumSize(new Dimension(0, 200)); // 设置最小高度为150像素
+
+        // 创建Query参数表格
         String[] columns = {"参数名", "参数类型", "是否必填", "举例", "描述"};
-        inputModel = new DefaultTableModel(columns, 0) {
+        queryParamsModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return true;
             }
-            
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 if (columnIndex == 1) return DataType.class;
                 if (columnIndex == 2) return RequireType.class;
                 return String.class;
             }
-            
-            // 重写setValueAt方法，确保存储正确的枚举值
-            @Override
-            public void setValueAt(Object value, int row, int column) {
-                if (column == 1 && value instanceof String) {
-                    // 处理DataType
-                    try {
-                        value = DataType.valueOf((String) value);
-                    } catch (IllegalArgumentException e) {
-                        value = DataType.STRING;
-                    }
-                } else if (column == 2 && value instanceof String) {
-                    // 处理RequireType
-                    try {
-                        value = RequireType.valueOf((String) value);
-                    } catch (IllegalArgumentException e) {
-                        value = RequireType.no;
-                    }
-                }
-                super.setValueAt(value, row, column);
-            }
         };
         
-        JBTable table = new JBTable(inputModel);
+        JBTable queryTable = createParamTable(queryParamsModel);
+        
+        // Query参数工具栏
+        JPanel queryToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addQueryButton = new JButton("添加参数");
+        JButton removeQueryButton = new JButton("删除参数");
+        JButton importQueryButton = new JButton("导入参数");
+
+        setupTableButtons(addQueryButton, removeQueryButton, importQueryButton, queryParamsModel, queryTable);
+        
+        queryToolbar.add(addQueryButton);
+        queryToolbar.add(removeQueryButton);
+        queryToolbar.add(importQueryButton);
+
+        queryPanel.add(queryToolbar, BorderLayout.NORTH);
+        queryPanel.add(new JBScrollPane(queryTable), BorderLayout.CENTER);
+        
+        // 创建Body参数面板
+        bodyPanel = new JPanel(new BorderLayout());
+        bodyPanel.setBorder(BorderFactory.createTitledBorder("Body参数配置(和基础属性协议有关)"));
+        // 根据协议类型选择组件
+        updateBodyPanel();
+        
+        // 添加到分割面板
+        splitPane.setTopComponent(queryPanel);
+        splitPane.setBottomComponent(bodyPanel);
+        splitPane.setDividerLocation(0.5); // 设置分隔位置为50%
+
+        panel.add(splitPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JBTable createParamTable(DefaultTableModel model) {
+        JBTable table = new JBTable(model);
         
         // 设置参数类型列的下拉框
         TableColumn typeColumn = table.getColumnModel().getColumn(1);
@@ -276,12 +380,7 @@ public class PropertyPanel extends JPanel {
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        typeColumn.setCellEditor(new DefaultCellEditor(typeCombo) {
-            @Override
-            public Object getCellEditorValue() {
-                return typeCombo.getSelectedItem();
-            }
-        });
+        typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
 
         // 设置是否必填列的下拉框
         TableColumn requireColumn = table.getColumnModel().getColumn(2);
@@ -296,35 +395,7 @@ public class PropertyPanel extends JPanel {
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        requireColumn.setCellEditor(new DefaultCellEditor(requireCombo) {
-            @Override
-            public Object getCellEditorValue() {
-                return requireCombo.getSelectedItem();
-            }
-        });
-        
-        // 设置自定义渲染器
-        table.setDefaultRenderer(DataType.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                if (value instanceof DataType) {
-                    value = ((DataType) value).getDisplayName();
-                }
-                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            }
-        });
-        
-        table.setDefaultRenderer(RequireType.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                if (value instanceof RequireType) {
-                    value = ((RequireType) value).getDisplayName();
-                }
-                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            }
-        });
+        requireColumn.setCellEditor(new DefaultCellEditor(requireCombo));
 
         // 设置列宽
         table.getColumnModel().getColumn(0).setPreferredWidth(100); // 参数名
@@ -332,33 +403,14 @@ public class PropertyPanel extends JPanel {
         table.getColumnModel().getColumn(2).setPreferredWidth(80);  // 是否必填
         table.getColumnModel().getColumn(3).setPreferredWidth(100); // 默认值
         table.getColumnModel().getColumn(4).setPreferredWidth(120); // 描述
-        
-        // 修改工具栏布局为 FlowLayout
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        
-        // 原有的添加和删除按钮
-        JButton addButton = new JButton("添加参数");
-        JButton removeButton = new JButton("删除参数");
-        JButton importButton = new JButton("导入参数");
-        JButton saveButton = new JButton("保存");
 
+        return table;
+    }
 
-        // 添加导入按钮的点击事件
-        importButton.addActionListener(e -> showImportDialog(inputModel));
-        saveButton.addActionListener(e -> {
-            updateParamsToPropertyMap();
-            SwingUtilities.invokeLater(() -> {
-                JBPopupFactory.getInstance()
-                        .createBalloonBuilder(new JLabel("保存成功"))
-                        .setFadeoutTime(3000)
-                        .createBalloon()
-                        .show(RelativePoint.getNorthWestOf(saveButton), Balloon.Position.above);
-            });
-        });
-
-        // 保持原有的添加和删除按钮事件处理
+    private void setupTableButtons(JButton addButton, JButton removeButton, JButton importButton, 
+             DefaultTableModel model, JBTable table) {
         addButton.addActionListener(e -> {
-            inputModel.addRow(new Object[]{
+            model.addRow(new Object[]{
                 "",                 // 参数名
                 DataType.STRING,    // 默认参数类型
                 RequireType.no,     // 默认是否必填
@@ -370,21 +422,143 @@ public class PropertyPanel extends JPanel {
         removeButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow != -1) {
-                inputModel.removeRow(selectedRow);
+                model.removeRow(selectedRow);
             }
         });
         
-        toolbar.add(addButton);
-        toolbar.add(removeButton);
-        toolbar.add(importButton);
-        toolbar.add(saveButton);
-        
-        panel.add(toolbar, BorderLayout.NORTH);
-        panel.add(new JBScrollPane(table), BorderLayout.CENTER);
-        
-        return panel;
+        importButton.addActionListener(e -> showImportDialog(model));
     }
 
+    private void updateParamsToPropertyMap() {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode paramsNode = mapper.createObjectNode();
+            
+            // 保存Query参数
+            ArrayNode queryParamsNode = mapper.createArrayNode();
+            for (int i = 0; i < queryParamsModel.getRowCount(); i++) {
+                String paramName = (String) queryParamsModel.getValueAt(i, 0);
+                if (paramName == null || paramName.trim().isEmpty()) {
+                    continue;
+                }
+
+                DataType paramType = (DataType) queryParamsModel.getValueAt(i, 1);
+                RequireType requiredType = (RequireType) queryParamsModel.getValueAt(i, 2);
+                String defaultValue = (String) queryParamsModel.getValueAt(i, 3);
+                String description = (String) queryParamsModel.getValueAt(i, 4);
+
+                ObjectNode paramNode = mapper.createObjectNode()
+                    .put("name", paramName)
+                    .put("type", paramType.getValue())
+                    .put("required", requiredType.getValue())
+                    .put("defaultValue", defaultValue)
+                    .put("description", description);
+        
+                queryParamsNode.add(paramNode);
+            }
+            paramsNode.set("queryParams", queryParamsNode);
+            
+            // 保存Body参数
+            ArrayNode bodyParamsNode = mapper.createArrayNode();
+            for (int i = 0; i < bodyParamsModel.getRowCount(); i++) {
+                String paramName = (String) bodyParamsModel.getValueAt(i, 0);
+                if (paramName == null || paramName.trim().isEmpty()) {
+                    continue;
+                }
+
+                DataType paramType = (DataType) bodyParamsModel.getValueAt(i, 1);
+                RequireType requiredType = (RequireType) bodyParamsModel.getValueAt(i, 2);
+                String defaultValue = (String) bodyParamsModel.getValueAt(i, 3);
+                String description = (String) bodyParamsModel.getValueAt(i, 4);
+
+                ObjectNode paramNode = mapper.createObjectNode()
+                    .put("name", paramName)
+                    .put("type", paramType.getValue())
+                    .put("required", requiredType.getValue())
+                    .put("defaultValue", defaultValue)
+                    .put("description", description);
+        
+                bodyParamsNode.add(paramNode);
+            }
+            paramsNode.set("bodyParams", bodyParamsNode);
+
+            String jsonParam = jsonTextArea.getText();
+            if (jsonParam != null && !jsonParam.trim().isEmpty()) {
+                paramsNode.put("jsonParams", jsonParam);
+            }
+
+            // 更新到propertyMap
+            propertyMap.put("params", paramsNode);
+            
+            // 触发源码更新事件
+            EventBus.getInstance().post(EventType.UPDATE_SOURCE_CODE + "_" + file.getPath(), propertyMap);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadParamsFromPropertyMap() {
+        try {
+            // 清空现有数据
+            while (queryParamsModel.getRowCount() > 0) {
+                queryParamsModel.removeRow(0);
+            }
+            while (bodyParamsModel.getRowCount() > 0) {
+                bodyParamsModel.removeRow(0);
+            }
+            
+            // 检查propertyMap是否包含params
+            if (!propertyMap.containsKey("params")) {
+                propertyMap.put("params", new ObjectMapper().createObjectNode());
+                return;
+            }
+            
+            // 从propertyMap加载数据
+            JsonNode paramsNode = (JsonNode) propertyMap.get("params");
+            
+            // 加载Query参数
+            if (paramsNode.has("queryParams")) {
+                JsonNode queryParamsArray = paramsNode.get("queryParams");
+                loadParamsToModel(queryParamsArray, queryParamsModel);
+            }
+            
+            // 加载Body参数
+            if (paramsNode.has("bodyParams")) {
+                JsonNode bodyParamsArray = paramsNode.get("bodyParams");
+                loadParamsToModel(bodyParamsArray, bodyParamsModel);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadParamsToModel(JsonNode paramsArray, DefaultTableModel model) {
+        if (paramsArray.isArray()) {
+            for (JsonNode paramNode : paramsArray) {
+                try {
+                    String name = paramNode.has("name") ? paramNode.get("name").asText() : "";
+                    DataType type = DataType.getByValue(paramNode.get("type").asInt());
+                    RequireType required = RequireType.getByValue(paramNode.get("required").asInt());
+                    String defaultValue = paramNode.has("defaultValue") ? 
+                            paramNode.get("defaultValue").asText() : "";
+                    String description = paramNode.has("description") ? 
+                            paramNode.get("description").asText() : "";
+                    
+                    model.addRow(new Object[]{
+                        name,
+                        type,
+                        required,
+                        defaultValue,
+                        description
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     private DefaultTableModel outputModel;
     private JComboBox<ResponseStructType> responseStructCombo;
@@ -594,171 +768,6 @@ public class PropertyPanel extends JPanel {
         });
         
         return mainPanel;
-    }
-
-    /**
-     * 更新参数到propertyMap
-     */
-    private void updateParamsToPropertyMap() {
-        
-        try {
-            DefaultTableModel model = inputModel;
-
-            ArrayNode paramsNode = new ObjectMapper().createArrayNode();
-            
-            // 遍历表格数据
-            for (int i = 0; i < model.getRowCount(); i++) {
-                String paramName = (String) model.getValueAt(i, 0);
-                if (paramName == null || paramName.trim().isEmpty()) {
-                    continue;
-                }
-
-                // 获取枚举并转换为value值
-                DataType paramType = (DataType) model.getValueAt(i, 1);
-                RequireType requiredType = (RequireType) model.getValueAt(i, 2);
-                String defaultValue = (String) model.getValueAt(i, 3);
-                String description = (String) model.getValueAt(i, 4);
-
-                ObjectNode paramNode = new ObjectMapper().createObjectNode()
-                    .put("name", paramName)
-                    .put("type", paramType.getValue())  // 存储value值
-                    .put("required", requiredType.getValue())  // 存储value值
-                    .put("defaultValue", defaultValue)
-                    .put("description", description);
-        
-                paramsNode.add(paramNode);
-            }
-            
-            // 更新到propertyMap
-            propertyMap.put("params", paramsNode);
-            
-            // 触发源码更新事件
-            EventBus.getInstance().post(EventType.UPDATE_SOURCE_CODE + "_" + file.getPath(), propertyMap);
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 从propertyMap加载参数到表格
-     */
-    private void loadParamsFromPropertyMap() {
-        DefaultTableModel model = null;
-        try {
-            model = inputModel;
-            
-            // 清空现有数据
-            while (model.getRowCount() > 0) {
-                model.removeRow(0);
-            }
-            
-            // 检查propertyMap是否包含params
-            if (!propertyMap.containsKey("params")) {
-                propertyMap.put("params", new ObjectMapper().createArrayNode());
-                return;
-            }
-            
-            // 从propertyMap加载数据
-            Object paramsObj = propertyMap.get("params");
-            if (paramsObj instanceof ArrayNode) {
-                ArrayNode paramsNode = (ArrayNode) paramsObj;
-                for (JsonNode paramNode : paramsNode) {
-                    try {
-                        // 获取必需字段，设置默认值
-                        String name = paramNode.has("name") ? paramNode.get("name").asText() : "";
-                        
-                        // 通过value值获取枚举实例
-                        DataType type = DataType.getByValue(paramNode.get("type").asInt());
-                        RequireType required = RequireType.getByValue(paramNode.get("required").asInt());
-                        
-                        // 获取可选字段
-                        String defaultValue = paramNode.has("defaultValue") ? 
-                                            paramNode.get("defaultValue").asText() : "";
-                        String description = paramNode.has("description") ? 
-                                           paramNode.get("description").asText() : "";
-                        
-                        model.addRow(new Object[]{
-                            name,
-                            type,
-                            required,
-                            defaultValue,
-                            description
-                        });
-                    } catch (Exception e) {
-                        // 如果单个参数析失败，继续处理下一个
-                        e.printStackTrace();
-                    }
-                }
-            }
-            // 加载返回值配置
-            loadOutputConfigFromPropertyMap();
-        } catch (Exception e) {
-            e.printStackTrace();
-            if(model!= null){
-                // 发生异常时清空表格
-                while (model.getRowCount() > 0) {
-                    model.removeRow(0);
-                }
-            }
-
-        }
-    }
-
-    private void loadOutputConfigFromPropertyMap() {
-        try {
-            DefaultTableModel model = outputModel;
-
-            // 清空现有数据
-            while (model.getRowCount() > 0) {
-                model.removeRow(0);
-            }
-
-            // 从propertyMap加载数据
-            if (propertyMap.containsKey("output")) {
-                JsonNode outputConfig = (JsonNode) propertyMap.get("output");
-
-                // 加载基础配置
-                if (outputConfig.has("responseStruct")) {
-                    int responseStructValue = outputConfig.get("responseStruct").asInt();
-                    for (ResponseStructType type : ResponseStructType.values()) {
-                        if (type.getValue() == responseStructValue) {
-                            responseStructCombo.setSelectedItem(type);
-                            break;
-                        }
-                    }
-                }
-
-                // 加载字段定义
-                if (outputConfig.has("fields")) {
-                    JsonNode fieldsNode = outputConfig.get("fields");
-                    if (fieldsNode.isArray()) {
-                        for (JsonNode fieldNode : fieldsNode) {
-                            String name = fieldNode.get("name").asText();
-                            DataType type = DataType.getByValue(fieldNode.get("type").asInt());
-                            StepType stepType = fieldNode.get("stepType") == null ? StepType.UNSTEP : StepType.getByValue(fieldNode.get("stepType").asInt());
-                            String description = fieldNode.has("description") ?
-                                    fieldNode.get("description").asText() : "";
-                            String example = fieldNode.has("example") ?
-                                    fieldNode.get("example").asText() : "";
-                            model.addRow(new Object[]{
-                                    name,
-                                    type,
-                                    stepType,
-                                    description,
-                                    example
-                            });
-                        }
-                    }
-                }
-            } else {
-                // 如果没有配置，设置默认值
-                responseStructCombo.setSelectedItem(ResponseStructType.STANDARD);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**

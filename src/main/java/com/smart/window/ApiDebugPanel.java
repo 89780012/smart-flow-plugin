@@ -31,7 +31,6 @@ import java.util.Map;
 
 public class ApiDebugPanel extends JPanel {
     private final Project project;
-    private JComboBox<String> protocolCombo;
     private JTextField baseUrlField;
     private JComboBox<String> methodCombo;
     private JTextField urlField;
@@ -46,14 +45,15 @@ public class ApiDebugPanel extends JPanel {
     private JLabel statusLabel;
     private JTabbedPane contentTabs;
     private JTabbedPane parametersTabs;
+    private JComboBox<String> contentTypeCombo;
 
     public ApiDebugPanel(Project project) {
         this.project = project;
         setLayout(new BorderLayout());
-        setBorder(JBUI.Borders.empty(5));
+        setBorder(JBUI.Borders.empty(2));
         
         // 设置首选大小
-        setPreferredSize(new Dimension(650, 650));
+        setPreferredSize(new Dimension(600, 600));
 
         // 创建顶部请求面板
         JPanel requestPanel = createRequestPanel();
@@ -61,7 +61,7 @@ public class ApiDebugPanel extends JPanel {
 
         // 创建内容选项卡面板
         contentTabs = new JTabbedPane();
-        contentTabs.setBorder(JBUI.Borders.empty(5, 0, 0, 0));
+        contentTabs.setBorder(JBUI.Borders.empty(2, 0, 0, 0));
         
         // 添加Headers选项卡
         contentTabs.addTab("请求头", AllIcons.Nodes.Parameter, createHeadersPanel());
@@ -79,43 +79,55 @@ public class ApiDebugPanel extends JPanel {
     }
 
     private JPanel createRequestPanel() {
-        JPanel panel = new JPanel(new BorderLayout(5, 5));
-        panel.setBorder(JBUI.Borders.empty(0, 0, 5, 0));
+        JPanel panel = new JPanel(new GridLayout(2, 1, 2, 2));
+        panel.setBorder(JBUI.Borders.empty(2));
 
-        // Base URL设置面板
-        JPanel baseUrlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        protocolCombo = new JComboBox<>(new String[]{"HTTP", "HTTPS"});
-        baseUrlPanel.add(protocolCombo);
+        // 第一行：Base URL设置面板
+        JPanel baseUrlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         
-        baseUrlField = new JTextField(30);
-        baseUrlPanel.add(new JLabel("Base DOMAIN:"));
+        baseUrlField = new JTextField(20);
+        JLabel domainLabel = new JLabel("域名:");
+        domainLabel.setPreferredSize(new Dimension(35, 25));
+        baseUrlPanel.add(domainLabel);
         baseUrlPanel.add(baseUrlField);
+
         
-        JButton saveBaseUrlButton = new JButton("保存", AllIcons.Actions.MenuSaveall);
+        JButton saveBaseUrlButton = new JButton("", AllIcons.Actions.MenuSaveall);
+        saveBaseUrlButton.setToolTipText("保存域名配置");
         saveBaseUrlButton.addActionListener(e -> saveSettings());
         baseUrlPanel.add(saveBaseUrlButton);
         
-        panel.add(baseUrlPanel, BorderLayout.NORTH);
+        panel.add(baseUrlPanel);
 
-        // 请求设置面板
-        JPanel requestSettingsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        methodCombo = new JComboBox<>(new String[]{"GET", "POST", "PUT", "DELETE"});
-        requestSettingsPanel.add(methodCombo);
+        // 第二行：请求设置面板
+        JPanel requestSettingsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         
-        urlField = new JTextField(30);
-        requestSettingsPanel.add(new JLabel("API Path:"));
+        // 请求方法下拉框
+        methodCombo = new JComboBox<>(new String[]{"GET", "POST", "PUT", "DELETE"});
+        methodCombo.setPreferredSize(new Dimension(65, 25));
+        requestSettingsPanel.add(methodCombo);
+                
+        
+        // 请求路径输入框
+        urlField = new JTextField(20);
+        JLabel pathLabel = new JLabel("路径:");
+        pathLabel.setPreferredSize(new Dimension(35, 25));
+        requestSettingsPanel.add(pathLabel);
         requestSettingsPanel.add(urlField);
         
-        sendButton = new JButton("发送请求", AllIcons.Actions.Execute);
+        // 发送按钮
+        sendButton = new JButton("", AllIcons.Actions.Execute);
+        sendButton.setToolTipText("发送请求");
         sendButton.addActionListener(e -> sendRequest());
         requestSettingsPanel.add(sendButton);
         
         // 状态标签
-        statusLabel = new JLabel("Ready");
-        statusLabel.setBorder(JBUI.Borders.empty(0, 10));
+        statusLabel = new JLabel("就绪");
+        statusLabel.setBorder(JBUI.Borders.empty(0, 5));
+        statusLabel.setPreferredSize(new Dimension(100, 25));
         requestSettingsPanel.add(statusLabel);
         
-        panel.add(requestSettingsPanel, BorderLayout.CENTER);
+        panel.add(requestSettingsPanel);
         
         return panel;
     }
@@ -136,7 +148,7 @@ public class ApiDebugPanel extends JPanel {
         String[] columnNames = {"Header名", "Header值"};
         headersModel = new DefaultTableModel(columnNames, 0);
         headersTable = new JBTable(headersModel);
-        
+
         // 设置表格列宽
         headersTable.getColumnModel().getColumn(0).setPreferredWidth(200);
         headersTable.getColumnModel().getColumn(1).setPreferredWidth(300);
@@ -154,10 +166,9 @@ public class ApiDebugPanel extends JPanel {
         return panel;
     }
 
-    private JTabbedPane createParametersPanel() {
+    private JPanel createParametersPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(JBUI.Borders.empty());
-
         // 创建参数选项卡
         parametersTabs = new JTabbedPane();
         
@@ -165,16 +176,16 @@ public class ApiDebugPanel extends JPanel {
         parametersTabs.addTab("Query参数", createQueryParamsPanel());
         
         // Body Parameters选项卡
-        parametersTabs.addTab("Body", createBodyPanel());
-        
+        parametersTabs.addTab("Body体", createBodyPanel());
+
         panel.add(parametersTabs, BorderLayout.CENTER);
-        return parametersTabs;
+        
+        return panel;
     }
 
     private JPanel createResponsePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(JBUI.Borders.empty());
-
         // 创建响应选项卡
         JTabbedPane responseTabs = new JTabbedPane();
 
@@ -187,7 +198,6 @@ public class ApiDebugPanel extends JPanel {
         headersArea = new JTextArea();
         headersArea.setEditable(false);
         responseTabs.addTab("响应头", AllIcons.Nodes.Parameter, new JBScrollPane(headersArea));
-
         panel.add(responseTabs, BorderLayout.CENTER);
         return panel;
     }
@@ -214,18 +224,51 @@ public class ApiDebugPanel extends JPanel {
     private JPanel createBodyPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        // 创建请求体文本区域
-        bodyTextArea = new JTextArea();
-        bodyTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        
         // 添加工具栏
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton formatButton = new JButton("格式化", AllIcons.Actions.PrettyPrint);
         formatButton.addActionListener(e -> formatJsonBody());
         toolbar.add(formatButton);
+
+        // 添加协议选择
+        contentTypeCombo = new JComboBox<>(new String[]{"application/json", "application/x-www-form-urlencoded", "multipart/form-data"});
+        contentTypeCombo.setPreferredSize(new Dimension(130, 25));
+        toolbar.add(contentTypeCombo);
         
         panel.add(toolbar, BorderLayout.NORTH);
-        panel.add(new JBScrollPane(bodyTextArea), BorderLayout.CENTER);
+
+        // 添加协议选择监听器
+        contentTypeCombo.addActionListener(e -> {
+            panel.remove(1); // 移除当前的请求体显示组件
+            if ("application/json".equals(contentTypeCombo.getSelectedItem())) {
+                // 创建请求体文本区域
+                bodyTextArea = new JTextArea();
+                bodyTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                panel.add(new JBScrollPane(bodyTextArea), BorderLayout.CENTER);
+            } else {
+                // 创建表格
+                String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
+                DefaultTableModel bodyParamsModel = new DefaultTableModel(columnNames, 0);
+                JTable bodyParamsTable = new JBTable(bodyParamsModel);
+                panel.add(new JBScrollPane(bodyParamsTable), BorderLayout.CENTER);
+            }
+            panel.revalidate();
+            panel.repaint();
+        });
+
+        // 初始化显示内容
+        if ("application/json".equals(contentTypeCombo.getSelectedItem())) {
+            // 创建请求体文本区域
+            bodyTextArea = new JTextArea();
+            bodyTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            panel.add(new JBScrollPane(bodyTextArea), BorderLayout.CENTER);
+        } else {
+            // 创建表格
+            String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
+            DefaultTableModel bodyParamsModel = new DefaultTableModel(columnNames, 0);
+            JTable bodyParamsTable = new JBTable(bodyParamsModel);
+            panel.add(new JBScrollPane(bodyParamsTable), BorderLayout.CENTER);
+        }
         return panel;
     }
 
@@ -242,18 +285,14 @@ public class ApiDebugPanel extends JPanel {
         }
     }
 
-
-    
     private void loadSettings() {
         SettingService settings = SettingService.getInstance(project);
         baseUrlField.setText(settings.getBaseUrl());
-        protocolCombo.setSelectedItem(settings.isUseHttps() ? "HTTPS" : "HTTP");
     }
     
     private void saveSettings() {
         SettingService settings = SettingService.getInstance(project);
         settings.setBaseUrl(baseUrlField.getText());
-        settings.setUseHttps("HTTPS".equals(protocolCombo.getSelectedItem()));
         
         // 显示保存成功通知
         NotificationGroupManager.getInstance()
@@ -268,6 +307,9 @@ public class ApiDebugPanel extends JPanel {
         
         // 设置URL
         urlField.setText(bizFileInfo.getUrl());
+        
+        // 设置协议
+        contentTypeCombo.setSelectedItem(bizFileInfo.getProtocol());
         
         // 清空参数
         while (queryParamsModel.getRowCount() > 0) {
@@ -324,10 +366,7 @@ public class ApiDebugPanel extends JPanel {
                 apiPath = apiPath.substring(1);
             }
             
-            String fullUrl = String.format("%s://%s/%s",
-                protocolCombo.getSelectedItem().toString().toLowerCase(),
-                baseUrl,
-                apiPath);
+            String fullUrl = String.format("%s/%s", baseUrl, apiPath);
 
             // 创建HTTP客户端
             HttpClient client = HttpClients.createDefault();
@@ -391,8 +430,9 @@ public class ApiDebugPanel extends JPanel {
                 ((HttpEntityEnclosingRequestBase) request).setEntity(
                     new StringEntity(requestBody, StandardCharsets.UTF_8));
                 if (!request.containsHeader("Content-Type")) {
-                    request.setHeader("Content-Type", "application/json");
-                    headers.put("Content-Type", "application/json");
+                    String contentType = (String) contentTypeCombo.getSelectedItem();
+                    request.setHeader("Content-Type", contentType);
+                    headers.put("Content-Type", contentType);
                 }
             }
 

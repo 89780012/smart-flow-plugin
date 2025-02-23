@@ -96,11 +96,12 @@ public class SourseCodeUtils {
             Element paramsElement = doc.createElement("params");
             rootElement.appendChild(paramsElement);
 
-            Object paramsObj = propertyMap.get("params");
-            if (paramsObj instanceof ArrayNode) {
-                ArrayNode paramsNode = (ArrayNode) paramsObj;
-                for (JsonNode paramNode : paramsNode) {
-                    Element paramElement = doc.createElement("param");
+            // 处理 queryParams
+            Object queryParamsObj = propertyMap.get("params");
+            if (queryParamsObj instanceof ObjectNode) {
+                ArrayNode queryParamsNode = (ArrayNode) ((ObjectNode) queryParamsObj).get("queryParams");
+                for (JsonNode paramNode : queryParamsNode) {
+                    Element paramElement = doc.createElement("queryParam");
                     paramsElement.appendChild(paramElement);
 
                     appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
@@ -114,6 +115,32 @@ public class SourseCodeUtils {
                         appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
                     }
                 }
+            }
+
+            // 处理 bodyParams
+            if (queryParamsObj instanceof ObjectNode) {
+                ArrayNode bodyParamsNode = (ArrayNode) ((ObjectNode) queryParamsObj).get("bodyParams");
+                for (JsonNode paramNode : bodyParamsNode) {
+                    Element paramElement = doc.createElement("bodyParam");
+                    paramsElement.appendChild(paramElement);
+
+                    appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
+                    appendTextElement(doc, paramElement, "type", paramNode.get("type").asText());
+                    appendTextElement(doc, paramElement, "required", paramNode.get("required").asText());
+
+                    if (paramNode.has("defaultValue")) {
+                        appendTextElement(doc, paramElement, "defaultValue", paramNode.get("defaultValue").asText());
+                    }
+                    if (paramNode.has("description")) {
+                        appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
+                    }
+                }
+            }
+
+            // 处理 jsonParams
+            String jsonParams = (String) propertyMap.get("jsonParams");
+            if (jsonParams != null && !jsonParams.isEmpty()) {
+                appendTextElement(doc, paramsElement, "jsonParams", jsonParams);
             }
 
             // 修改返回值配置部分
