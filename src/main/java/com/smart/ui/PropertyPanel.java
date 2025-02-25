@@ -1,5 +1,6 @@
 package com.smart.ui;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -95,7 +96,20 @@ public class PropertyPanel extends JPanel {
     private void updateBodyPanel() {
         // 获取当前选择的协议
         String selectedProtocol = ((HttpProtocol) protocolCombo.getSelectedItem()).getValue();
-        
+        // 使用表格
+        String[] columns = {"参数名", "参数类型", "是否必填", "举例", "描述"};
+        bodyParamsModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return true;
+            }
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 1) return DataType.class;
+                if (columnIndex == 2) return RequireType.class;
+                return String.class;
+            }
+        };
         // 清除 bodyPanel 的所有组件
         bodyPanel.removeAll();
 
@@ -107,23 +121,8 @@ public class PropertyPanel extends JPanel {
             JScrollPane jsonScrollPane = new JScrollPane(jsonTextArea);
             bodyPanel.add(jsonScrollPane, BorderLayout.CENTER);
         } else {
-            // 使用表格
-            String[] columns = {"参数名", "参数类型", "是否必填", "举例", "描述"};
-            bodyParamsModel = new DefaultTableModel(columns, 0) {
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    return true;
-                }
-                @Override
-                public Class<?> getColumnClass(int columnIndex) {
-                    if (columnIndex == 1) return DataType.class;
-                    if (columnIndex == 2) return RequireType.class;
-                    return String.class;
-                }
-            };
-            
+
             JBTable bodyTable = createParamTable(bodyParamsModel);
-            
             // Body参数工具栏
             JPanel bodyToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
             JButton addBodyButton = new JButton("添加参数");
@@ -283,14 +282,16 @@ public class PropertyPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         JButton saveButton = new JButton("保存", AllIcons.Actions.MenuSaveall);
         saveButton.addActionListener(e -> {
-            updateParamsToPropertyMap();
-            SwingUtilities.invokeLater(() -> {
-                JBPopupFactory.getInstance()
-                        .createBalloonBuilder(new JLabel("保存成功"))
-                        .setFadeoutTime(3000)
-                        .createBalloon()
-                        .show(RelativePoint.getNorthWestOf(saveButton), Balloon.Position.above);
-            });
+            boolean flag = updateParamsToPropertyMap();
+            if(flag){
+                SwingUtilities.invokeLater(() -> {
+                    JBPopupFactory.getInstance()
+                            .createBalloonBuilder(new JLabel("保存成功"))
+                            .setFadeoutTime(3000)
+                            .createBalloon()
+                            .show(RelativePoint.getNorthWestOf(saveButton), Balloon.Position.above);
+                });
+            }
         });
         // 1. 基础配置区域
         JPanel basicConfig = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -429,14 +430,14 @@ public class PropertyPanel extends JPanel {
         importButton.addActionListener(e -> showImportDialog(model));
     }
 
-    private void updateParamsToPropertyMap() {
+    private boolean updateParamsToPropertyMap() {
         try {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode paramsNode = mapper.createObjectNode();
             
             // 保存Query参数
             ArrayNode queryParamsNode = mapper.createArrayNode();
-            for (int i = 0; i < queryParamsModel.getRowCount(); i++) {
+            for (int i = 0; queryParamsModel!=null && i < queryParamsModel.getRowCount() ; i++) {
                 String paramName = (String) queryParamsModel.getValueAt(i, 0);
                 if (paramName == null || paramName.trim().isEmpty()) {
                     continue;
@@ -460,7 +461,7 @@ public class PropertyPanel extends JPanel {
             
             // 保存Body参数
             ArrayNode bodyParamsNode = mapper.createArrayNode();
-            for (int i = 0; i < bodyParamsModel.getRowCount(); i++) {
+            for (int i = 0; bodyParamsModel!=null && i < bodyParamsModel.getRowCount(); i++) {
                 String paramName = (String) bodyParamsModel.getValueAt(i, 0);
                 if (paramName == null || paramName.trim().isEmpty()) {
                     continue;
@@ -481,10 +482,28 @@ public class PropertyPanel extends JPanel {
                 bodyParamsNode.add(paramNode);
             }
             paramsNode.set("bodyParams", bodyParamsNode);
-
-            String jsonParam = jsonTextArea.getText();
-            if (jsonParam != null && !jsonParam.trim().isEmpty()) {
-                paramsNode.put("jsonParams", jsonParam);
+            
+            // 是不是json协议都要保存jsonParams
+            String jsonParam = jsonTextArea.getText().trim();
+            if (jsonParam != null && !jsonParam.isEmpty()) {
+                // 验证JSON格式
+                try {
+                    // 尝试解析JSON，如果格式不正确会抛出异常
+                    JsonNode jsonNode = mapper.readTree(jsonParam);
+                    // 检查是否是对象或数组
+                    if (!jsonNode.isObject() && !jsonNode.isArray()) {
+                        throw new JsonProcessingException("JSON格式不正确：必须是对象或数组") {};
+                    }
+                    // JSON格式正确，保存到paramsNode
+                    paramsNode.put("jsonParams", jsonParam);
+                } catch (Exception e) {
+                    // JSON格式不正确，显示错误消息
+                    JOptionPane.showMessageDialog(this,
+                            "JSON格式不正确，请检查后重试",
+                            "格式错误",
+                            JOptionPane.ERROR_MESSAGE);
+                    return false; // 中断保存操作
+                }
             }
 
             // 更新到propertyMap
@@ -492,19 +511,25 @@ public class PropertyPanel extends JPanel {
             
             // 触发源码更新事件
             EventBus.getInstance().post(EventType.UPDATE_SOURCE_CODE + "_" + file.getPath(), propertyMap);
-            
+
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "保存失败: " + e.getMessage(),
+                    "错误",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
         }
     }
 
     private void loadParamsFromPropertyMap() {
         try {
             // 清空现有数据
-            while (queryParamsModel.getRowCount() > 0) {
+            while (queryParamsModel != null && queryParamsModel.getRowCount() > 0) {
                 queryParamsModel.removeRow(0);
             }
-            while (bodyParamsModel.getRowCount() > 0) {
+            while (bodyParamsModel != null && bodyParamsModel.getRowCount() > 0) {
                 bodyParamsModel.removeRow(0);
             }
             
@@ -529,10 +554,25 @@ public class PropertyPanel extends JPanel {
                 loadParamsToModel(bodyParamsArray, bodyParamsModel);
             }
             
+            // 加载JSON参数
+            if (paramsNode.has("jsonParams") && jsonTextArea != null) {
+                String jsonParams = paramsNode.get("jsonParams").asText();
+                // 格式化JSON以便更好地显示
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode jsonNode = mapper.readTree(jsonParams);
+                    jsonTextArea.setText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode));
+                } catch (Exception e) {
+                    // 如果格式化失败，直接显示原始文本
+                    jsonTextArea.setText(jsonParams);
+                }
+            }
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     private void loadParamsToModel(JsonNode paramsArray, DefaultTableModel model) {
         if (paramsArray.isArray()) {

@@ -1,5 +1,6 @@
 package com.smart.utils;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.smart.bean.ComponentInfo;
@@ -99,48 +100,59 @@ public class SourseCodeUtils {
             // 处理 queryParams
             Object queryParamsObj = propertyMap.get("params");
             if (queryParamsObj instanceof ObjectNode) {
+                // 处理 queryParams - 创建queryParams节点
                 ArrayNode queryParamsNode = (ArrayNode) ((ObjectNode) queryParamsObj).get("queryParams");
-                for (JsonNode paramNode : queryParamsNode) {
-                    Element paramElement = doc.createElement("queryParam");
-                    paramsElement.appendChild(paramElement);
+                if (queryParamsNode != null && queryParamsNode.size() > 0) {
+                    Element queryParamsElement = doc.createElement("queryParams");
+                    paramsElement.appendChild(queryParamsElement);
+                    
+                    for (JsonNode paramNode : queryParamsNode) {
+                        Element paramElement = doc.createElement("queryParam");
+                        queryParamsElement.appendChild(paramElement);
 
-                    appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
-                    appendTextElement(doc, paramElement, "type", paramNode.get("type").asText());
-                    appendTextElement(doc, paramElement, "required", paramNode.get("required").asText());
+                        appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
+                        appendTextElement(doc, paramElement, "type", paramNode.get("type").asText());
+                        appendTextElement(doc, paramElement, "required", paramNode.get("required").asText());
 
-                    if (paramNode.has("defaultValue")) {
-                        appendTextElement(doc, paramElement, "defaultValue", paramNode.get("defaultValue").asText());
-                    }
-                    if (paramNode.has("description")) {
-                        appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
+                        if (paramNode.has("defaultValue")) {
+                            appendTextElement(doc, paramElement, "defaultValue", paramNode.get("defaultValue").asText());
+                        }
+                        if (paramNode.has("description")) {
+                            appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
+                        }
                     }
                 }
-            }
 
-            // 处理 bodyParams
-            if (queryParamsObj instanceof ObjectNode) {
+                // 处理 bodyParams - 创建bodyParams节点
                 ArrayNode bodyParamsNode = (ArrayNode) ((ObjectNode) queryParamsObj).get("bodyParams");
-                for (JsonNode paramNode : bodyParamsNode) {
-                    Element paramElement = doc.createElement("bodyParam");
-                    paramsElement.appendChild(paramElement);
+                if (bodyParamsNode != null && bodyParamsNode.size() > 0) {
+                    Element bodyParamsElement = doc.createElement("bodyParams");
+                    paramsElement.appendChild(bodyParamsElement);
+                    
+                    for (JsonNode paramNode : bodyParamsNode) {
+                        Element paramElement = doc.createElement("bodyParam");
+                        bodyParamsElement.appendChild(paramElement);
 
-                    appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
-                    appendTextElement(doc, paramElement, "type", paramNode.get("type").asText());
-                    appendTextElement(doc, paramElement, "required", paramNode.get("required").asText());
+                        appendTextElement(doc, paramElement, "name", paramNode.get("name").asText());
+                        appendTextElement(doc, paramElement, "type", paramNode.get("type").asText());
+                        appendTextElement(doc, paramElement, "required", paramNode.get("required").asText());
 
-                    if (paramNode.has("defaultValue")) {
-                        appendTextElement(doc, paramElement, "defaultValue", paramNode.get("defaultValue").asText());
-                    }
-                    if (paramNode.has("description")) {
-                        appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
+                        if (paramNode.has("defaultValue")) {
+                            appendTextElement(doc, paramElement, "defaultValue", paramNode.get("defaultValue").asText());
+                        }
+                        if (paramNode.has("description")) {
+                            appendTextElement(doc, paramElement, "description", paramNode.get("description").asText());
+                        }
                     }
                 }
-            }
 
-            // 处理 jsonParams
-            String jsonParams = (String) propertyMap.get("jsonParams");
-            if (jsonParams != null && !jsonParams.isEmpty()) {
-                appendTextElement(doc, paramsElement, "jsonParams", jsonParams);
+                // 处理 jsonParams
+                JsonNode jsonParamsNode = ((ObjectNode) queryParamsObj).get("jsonParams");
+                if (jsonParamsNode != null && !jsonParamsNode.isNull()) {
+                    Element jsonParamsElement = doc.createElement("jsonParams");
+                    paramsElement.appendChild(jsonParamsElement);
+                    appendTextElement(doc, jsonParamsElement, "content", jsonParamsNode.asText());
+                }
             }
 
             // 修改返回值配置部分
@@ -408,7 +420,7 @@ public class SourseCodeUtils {
         } catch (Exception e) {
             // XML解析失败，可能是空文件或格式错误
             propertyMap.clear();
-            propertyMap.put("params", new ObjectMapper().createArrayNode());
+            propertyMap.put("params", new ObjectMapper().createObjectNode());
             return;
         }
 
@@ -430,50 +442,104 @@ public class SourseCodeUtils {
             propertyMap.put("name", getElementTextContent(bizElement, "name"));
         }
 
-        // 解析入参 - 获取biz/params下的param标签
+        // 解析入参 - 修改这部分逻辑以处理多种参数类型
         if (bizElement != null) {
             NodeList paramsNodeList = bizElement.getElementsByTagName("params");
-            ArrayNode paramsArray = new ObjectMapper().createArrayNode();
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode paramsObject = mapper.createObjectNode();
 
             if (paramsNodeList != null && paramsNodeList.getLength() > 0) {
                 Element paramsElement = (Element) paramsNodeList.item(0);
-                NodeList paramNodes = paramsElement.getElementsByTagName("param");
-
-                for (int i = 0; i < paramNodes.getLength(); i++) {
-                    Element paramElement = (Element) paramNodes.item(i);
-                    if (paramElement == null)
-                        continue;
-
-                    ObjectNode paramNode = new ObjectMapper().createObjectNode();
-
-                    // 获取必需字段，设置默认值
-                    String name = getElementTextContent(paramElement, "name");
-                    paramNode.put("name", name.isEmpty() ? "param" + i : name);
-
-                    // 通过value值获取枚举
-                    String typeValue = getElementTextContent(paramElement, "type");
-                    DataType dataType = DataType.getByValue(Integer.parseInt(typeValue));
-                    paramNode.put("type", dataType.getValue());
-
-                    String requiredValue = getElementTextContent(paramElement, "required");
-                    RequireType requireType = RequireType.getByValue(Integer.parseInt(requiredValue));
-                    paramNode.put("required", requireType.getValue());
-
-                    // 获取可选字段
-                    String defaultValue = getElementTextContent(paramElement, "defaultValue");
-                    if (!defaultValue.isEmpty()) {
-                        paramNode.put("defaultValue", defaultValue);
+                
+                // 处理 queryParams
+                NodeList queryParamsNodes = paramsElement.getElementsByTagName("queryParams");
+                if (queryParamsNodes != null && queryParamsNodes.getLength() > 0) {
+                    Element queryParamsElement = (Element) queryParamsNodes.item(0);
+                    NodeList queryParamNodes = queryParamsElement.getElementsByTagName("queryParam");
+                    
+                    ArrayNode queryParamsArray = mapper.createArrayNode();
+                    for (int i = 0; i < queryParamNodes.getLength(); i++) {
+                        Element paramElement = (Element) queryParamNodes.item(i);
+                        ObjectNode paramNode = mapper.createObjectNode();
+                        
+                        String name = getElementTextContent(paramElement, "name");
+                        paramNode.put("name", name);
+                        
+                        String typeValue = getElementTextContent(paramElement, "type");
+                        paramNode.put("type", Integer.parseInt(typeValue));
+                        
+                        String requiredValue = getElementTextContent(paramElement, "required");
+                        paramNode.put("required", Integer.parseInt(requiredValue));
+                        
+                        String defaultValue = getElementTextContent(paramElement, "defaultValue");
+                        if (!defaultValue.isEmpty()) {
+                            paramNode.put("defaultValue", defaultValue);
+                        }
+                        
+                        String description = getElementTextContent(paramElement, "description");
+                        if (!description.isEmpty()) {
+                            paramNode.put("description", description);
+                        }
+                        
+                        queryParamsArray.add(paramNode);
                     }
-
-                    String description = getElementTextContent(paramElement, "description");
-                    if (!description.isEmpty()) {
-                        paramNode.put("description", description);
+                    paramsObject.set("queryParams", queryParamsArray);
+                } else {
+                    // 如果没有找到queryParams节点，创建一个空数组
+                    paramsObject.set("queryParams", mapper.createArrayNode());
+                }
+                
+                // 处理 bodyParams
+                NodeList bodyParamsNodes = paramsElement.getElementsByTagName("bodyParams");
+                if (bodyParamsNodes != null && bodyParamsNodes.getLength() > 0) {
+                    Element bodyParamsElement = (Element) bodyParamsNodes.item(0);
+                    NodeList bodyParamNodes = bodyParamsElement.getElementsByTagName("bodyParam");
+                    
+                    ArrayNode bodyParamsArray = mapper.createArrayNode();
+                    for (int i = 0; i < bodyParamNodes.getLength(); i++) {
+                        Element paramElement = (Element) bodyParamNodes.item(i);
+                        ObjectNode paramNode = mapper.createObjectNode();
+                        
+                        String name = getElementTextContent(paramElement, "name");
+                        paramNode.put("name", name);
+                        
+                        String typeValue = getElementTextContent(paramElement, "type");
+                        paramNode.put("type", Integer.parseInt(typeValue));
+                        
+                        String requiredValue = getElementTextContent(paramElement, "required");
+                        paramNode.put("required", Integer.parseInt(requiredValue));
+                        
+                        String defaultValue = getElementTextContent(paramElement, "defaultValue");
+                        if (!defaultValue.isEmpty()) {
+                            paramNode.put("defaultValue", defaultValue);
+                        }
+                        
+                        String description = getElementTextContent(paramElement, "description");
+                        if (!description.isEmpty()) {
+                            paramNode.put("description", description);
+                        }
+                        
+                        bodyParamsArray.add(paramNode);
                     }
-
-                    paramsArray.add(paramNode);
+                    paramsObject.set("bodyParams", bodyParamsArray);
+                } else {
+                    // 如果没有找到bodyParams节点，创建一个空数组
+                    paramsObject.set("bodyParams", mapper.createArrayNode());
+                }
+                
+                // 处理 jsonParams
+                NodeList jsonParamsNodes = paramsElement.getElementsByTagName("jsonParams");
+                if (jsonParamsNodes != null && jsonParamsNodes.getLength() > 0) {
+                    Element jsonParamsElement = (Element) jsonParamsNodes.item(0);
+                    String jsonContent = getElementTextContent(jsonParamsElement, "content");
+                    if (!jsonContent.isEmpty()) {
+                        paramsObject.put("jsonParams", jsonContent);
+                    }
                 }
             }
-            propertyMap.put("params", paramsArray);
+            
+            // 将解析后的参数对象存入propertyMap
+            propertyMap.put("params", paramsObject);
         }
 
         // 添加组件
