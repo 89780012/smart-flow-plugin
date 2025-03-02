@@ -382,6 +382,25 @@ public class PropertyPanel extends JPanel {
             }
         });
         typeColumn.setCellEditor(new DefaultCellEditor(typeCombo));
+        // 设置参数类型列的渲染器
+        typeColumn.setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+                if (value instanceof DataType) {
+                    value = ((DataType) value).getDisplayName();
+                }
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (isSelected) {
+                    c.setBackground(table.getSelectionBackground());
+                    c.setForeground(table.getSelectionForeground());
+                } else {
+                    c.setBackground(table.getBackground());
+                    c.setForeground(table.getForeground());
+                }
+                return c;
+            }
+        });
 
         // 设置是否必填列的下拉框
         TableColumn requireColumn = table.getColumnModel().getColumn(2);
@@ -397,6 +416,25 @@ public class PropertyPanel extends JPanel {
             }
         });
         requireColumn.setCellEditor(new DefaultCellEditor(requireCombo));
+        // 设置是否必填列的渲染器
+        requireColumn.setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+                if (value instanceof RequireType) {
+                    value = ((RequireType) value).getDisplayName();
+                }
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (isSelected) {
+                    c.setBackground(table.getSelectionBackground());
+                    c.setForeground(table.getSelectionForeground());
+                } else {
+                    c.setBackground(table.getBackground());
+                    c.setForeground(table.getForeground());
+                }
+                return c;
+            }
+        });
 
         // 设置列宽
         table.getColumnModel().getColumn(0).setPreferredWidth(100); // 参数名

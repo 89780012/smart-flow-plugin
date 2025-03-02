@@ -38,6 +38,7 @@ public class ApiDebugPanel extends JPanel {
     private JTextArea bodyTextArea;
     private JTable headersTable;
     private DefaultTableModel queryParamsModel;
+    private DefaultTableModel bodyParamsModel;
     private DefaultTableModel headersModel;
     private JButton sendButton;
     private JTextArea responseArea;
@@ -207,7 +208,17 @@ public class ApiDebugPanel extends JPanel {
         
         // 创建查询参数表格
         String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
-        queryParamsModel = new DefaultTableModel(columnNames, 0);
+        queryParamsModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                if(column == 1){
+                    return true;
+                }
+                return false;
+            }
+
+        };
+
         queryParamsTable = new JBTable(queryParamsModel);
         
         // 设置表格列宽
@@ -248,7 +259,15 @@ public class ApiDebugPanel extends JPanel {
             } else {
                 // 创建表格
                 String[] columnNames = {"参数名", "参数值", "参数类型", "是否必填", "示例值"};
-                DefaultTableModel bodyParamsModel = new DefaultTableModel(columnNames, 0);
+                bodyParamsModel = new DefaultTableModel(columnNames, 0) {
+                    @Override
+                    public boolean isCellEditable(int row, int column) {
+                        if(column == 1){
+                            return true;
+                        }
+                        return false;
+                    }
+                };
                 JTable bodyParamsTable = new JBTable(bodyParamsModel);
                 panel.add(new JBScrollPane(bodyParamsTable), BorderLayout.CENTER);
             }
@@ -312,44 +331,55 @@ public class ApiDebugPanel extends JPanel {
         contentTypeCombo.setSelectedItem(bizFileInfo.getProtocol());
         
         // 清空参数
-        while (queryParamsModel.getRowCount() > 0) {
-            queryParamsModel.removeRow(0);
+        if(queryParamsModel != null){
+            queryParamsModel.setRowCount(0);
         }
-        bodyTextArea.setText("");
-        
-        // 检查是否是JSON协议
-        boolean isJsonProtocol = "application/json".equalsIgnoreCase(bizFileInfo.getProtocol());
-        
-        if (isJsonProtocol) {
-            // 如果是JSON协议，将所有参数转换为JSON格式放入body
-            Map<String, Object> bodyParams = new HashMap<>();
-            for (BizFileInfo.ParamInfo param : bizFileInfo.getParams()) {
-                bodyParams.put(param.getName(), param.getDefaultValue());
-            }
-            
-            // 格式化JSON并设置到body区域
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            bodyTextArea.setText(gson.toJson(bodyParams));
-            
-            // 切换到Body选项卡
-            contentTabs.setSelectedIndex(1);
-            parametersTabs.setSelectedIndex(1);
-        } else {
-            // 非JSON协议，参数放入查询参数表格
-            for (BizFileInfo.ParamInfo param : bizFileInfo.getParams()) {
-                queryParamsModel.addRow(new Object[]{
+        if(bodyParamsModel != null){
+            bodyParamsModel.setRowCount(0);
+        }
+        if(bodyTextArea != null){
+            bodyTextArea.setText("");
+        }
+
+        // 正常Query参数
+        for (BizFileInfo.ParamInfo param : bizFileInfo.getParams().getQueryParams()) {
+            queryParamsModel.addRow(new Object[]{
                     param.getName(),
-                    param.getValue(),
+                    param.getDefaultValue(),
                     param.getType().getDisplayName(),
                     param.getRequired().getDisplayName(),
                     param.getDefaultValue()
+            });
+        }
+
+        // 检查是否是JSON协议
+        boolean isJsonProtocol = "application/json".equalsIgnoreCase(bizFileInfo.getProtocol());
+        if (isJsonProtocol) {
+            String content = "";
+
+            if (bizFileInfo.getParams() != null && bizFileInfo.getParams().getJsonParams() != null) {
+                content = bizFileInfo.getParams().getJsonParams().getContent();
+                try {
+                    bodyTextArea.setText(content);
+                } catch (Exception e) {
+                    bodyTextArea.setText("无效的JSON格式");
+                }
+            }
+        } else {
+            // 正常Body key value 参数
+            for (BizFileInfo.ParamInfo param : bizFileInfo.getParams().getBodyParams()) {
+                bodyParamsModel.addRow(new Object[]{
+                        param.getName(),
+                        param.getDefaultValue(),
+                        param.getType().getDisplayName(),
+                        param.getRequired().getDisplayName(),
+                        param.getDefaultValue()
                 });
             }
 
-            // 切换到Body选项卡
-            contentTabs.setSelectedIndex(1);
-            parametersTabs.setSelectedIndex(0);
         }
+        contentTabs.setSelectedIndex(1);
+        parametersTabs.setSelectedIndex(0);
     }
     
     private void sendRequest() {
