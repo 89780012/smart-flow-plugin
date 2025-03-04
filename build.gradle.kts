@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.smart"
-version = "1.1.4"
+version = "1.1.5"
 
 repositories {
     maven { url = uri("https://maven.aliyun.com/repository/public") }
@@ -75,6 +75,6 @@ sourceSets {
 dependencies {
     implementation("org.json:json:20231013")
     implementation("org.jetbrains:annotations:24.0.0")
-    implementation("org.apache.httpcomponents:httpclient:4.5.13")
-    implementation("com.google.code.gson:gson:2.8.9")
+//    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+//    implementation("com.google.code.gson:gson:2.8.9")
 }

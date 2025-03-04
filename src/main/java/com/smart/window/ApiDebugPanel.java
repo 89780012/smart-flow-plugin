@@ -7,25 +7,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
-import com.smart.enums.DataType;
-import com.smart.enums.RequireType;
-import com.smart.enums.ParamType;
+
 import com.smart.service.SettingService;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -295,12 +287,42 @@ public class ApiDebugPanel extends JPanel {
         try {
             String text = bodyTextArea.getText();
             if (text != null && !text.isEmpty()) {
-                JsonElement jsonElement = JsonParser.parseString(text);
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                bodyTextArea.setText(gson.toJson(jsonElement));
+                // 简单的 JSON 格式化实现
+                StringBuilder formatted = new StringBuilder();
+                int indentLevel = 0;
+                boolean inQuotes = false;
+                
+                for (char c : text.toCharArray()) {
+                    switch (c) {
+                        case '{':
+                        case '[':
+                            formatted.append(c).append("\n").append("    ".repeat(++indentLevel));
+                            break;
+                        case '}':
+                        case ']':
+                            formatted.append("\n").append("    ".repeat(--indentLevel)).append(c);
+                            break;
+                        case '"':
+                            inQuotes = !inQuotes;
+                            formatted.append(c);
+                            break;
+                        case ',':
+                            formatted.append(c);
+                            if (!inQuotes) {
+                                formatted.append("\n").append("    ".repeat(indentLevel));
+                            }
+                            break;
+                        case ':':
+                            formatted.append(c).append(" ");
+                            break;
+                        default:
+                            formatted.append(c);
+                    }
+                }
+                bodyTextArea.setText(formatted.toString());
             }
         } catch (Exception e) {
-            // 如果不是有效的JSON，保持原样
+            // 如果格式化失败，保持原文本不变
         }
     }
 
@@ -403,11 +425,10 @@ public class ApiDebugPanel extends JPanel {
             String fullUrl = String.format("%s/%s", baseUrl, apiPath);
 
             // 创建HTTP客户端
-            HttpClient client = HttpClients.createDefault();
-            
-            // 创建请求
-            HttpRequestBase request;
-            String method = (String) methodCombo.getSelectedItem();
+            HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
             
             // 收集查询参数
             Map<String, Object> queryParams = new HashMap<>();
@@ -428,23 +449,6 @@ public class ApiDebugPanel extends JPanel {
                     urlBuilder.append(name).append("=").append(value).append("&"));
                 fullUrl = urlBuilder.substring(0, urlBuilder.length() - 1);
             }
-            
-            switch (method) {
-                case "GET":
-                    request = new HttpGet(fullUrl);
-                    break;
-                case "POST":
-                    request = new HttpPost(fullUrl);
-                    break;
-                case "PUT":
-                    request = new HttpPut(fullUrl);
-                    break;
-                case "DELETE":
-                    request = new HttpDelete(fullUrl);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported HTTP method: " + method);
-            }
 
             // 收集请求头
             Map<String, String> headers = new HashMap<>();
@@ -454,20 +458,44 @@ public class ApiDebugPanel extends JPanel {
                 String headerValue = (String) headersModel.getValueAt(i, 1);
                 if (headerName != null && !headerName.isEmpty() && headerValue != null) {
                     headers.put(headerName, headerValue);
-                    request.addHeader(headerName, headerValue);
                 }
             }
 
             // 获取请求体
             String requestBody = bodyTextArea.getText().trim();
-            if (request instanceof HttpEntityEnclosingRequestBase && !requestBody.isEmpty()) {
-                ((HttpEntityEnclosingRequestBase) request).setEntity(
-                    new StringEntity(requestBody, StandardCharsets.UTF_8));
-                if (!request.containsHeader("Content-Type")) {
-                    String contentType = (String) contentTypeCombo.getSelectedItem();
-                    request.setHeader("Content-Type", contentType);
-                    headers.put("Content-Type", contentType);
-                }
+            String method = (String) methodCombo.getSelectedItem();
+
+            // 构建请求
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .timeout(Duration.ofMinutes(1));
+
+            // 添加请求头
+            headers.forEach(requestBuilder::header);
+            
+            // 设置Content-Type
+            if (!requestBody.isEmpty() && !headers.containsKey("Content-Type")) {
+                String contentType = (String) contentTypeCombo.getSelectedItem();
+                requestBuilder.header("Content-Type", contentType);
+                headers.put("Content-Type", contentType);
+            }
+
+            // 根据HTTP方法设置请求
+            switch (method) {
+                case "GET":
+                    requestBuilder.GET();
+                    break;
+                case "POST":
+                    requestBuilder.POST(HttpRequest.BodyPublishers.ofString(requestBody));
+                    break;
+                case "PUT":
+                    requestBuilder.PUT(HttpRequest.BodyPublishers.ofString(requestBody));
+                    break;
+                case "DELETE":
+                    requestBuilder.DELETE();
+                    break;
+                default:
+                    throw new IllegalArgumentException("不支持的HTTP方法: " + method);
             }
 
             // 打印请求信息
@@ -491,9 +519,39 @@ public class ApiDebugPanel extends JPanel {
             if (!requestBody.isEmpty()) {
                 requestInfo.append("\n=== 请求体 ===\n");
                 try {
-                    JsonElement jsonElement = JsonParser.parseString(requestBody);
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                    requestInfo.append(gson.toJson(jsonElement)).append("\n");
+                    // 格式化 JSON 请求体
+                    StringBuilder formatted = new StringBuilder();
+                    int indentLevel = 0;
+                    boolean inQuotes = false;
+                    
+                    for (char c : requestBody.toCharArray()) {
+                        switch (c) {
+                            case '{':
+                            case '[':
+                                formatted.append(c).append("\n").append("    ".repeat(++indentLevel));
+                                break;
+                            case '}':
+                            case ']':
+                                formatted.append("\n").append("    ".repeat(--indentLevel)).append(c);
+                                break;
+                            case '"':
+                                inQuotes = !inQuotes;
+                                formatted.append(c);
+                                break;
+                            case ',':
+                                formatted.append(c);
+                                if (!inQuotes) {
+                                    formatted.append("\n").append("    ".repeat(indentLevel));
+                                }
+                                break;
+                            case ':':
+                                formatted.append(c).append(" ");
+                                break;
+                            default:
+                                formatted.append(c);
+                        }
+                    }
+                    requestInfo.append(formatted.toString()).append("\n");
                 } catch (Exception e) {
                     requestInfo.append(requestBody).append("\n");
                 }
@@ -502,30 +560,62 @@ public class ApiDebugPanel extends JPanel {
             requestInfo.append("\n=== 响应信息 ===\n");
             
             // 发送请求
-            statusLabel.setText("Sending request...");
-            HttpResponse response = client.execute(request);
+            statusLabel.setText("发送请求中...");
+            HttpResponse<String> response = client.send(requestBuilder.build(), 
+                HttpResponse.BodyHandlers.ofString());
 
             // 处理响应
-            String responseBody = EntityUtils.toString(response.getEntity());
+            String responseBody = response.body();
             
             // 更新状态
-            int statusCode = response.getStatusLine().getStatusCode();
-            statusLabel.setText("Status: " + statusCode + " " + response.getStatusLine().getReasonPhrase());
+            int statusCode = response.statusCode();
+            statusLabel.setText("状态: " + statusCode);
 
             // 显示响应头
             StringBuilder responseHeaders = new StringBuilder();
-            for (org.apache.http.Header header : response.getAllHeaders()) {
-                responseHeaders.append(header.getName()).append(": ").append(header.getValue()).append("\n");
-            }
+            response.headers().map().forEach((name, values) -> {
+                values.forEach(value -> 
+                    responseHeaders.append(name).append(": ").append(value).append("\n"));
+            });
             headersArea.setText(responseHeaders.toString());
 
             // 格式化并显示响应
             try {
-                JsonElement jsonElement = JsonParser.parseString(responseBody);
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                responseArea.setText(requestInfo.toString() + gson.toJson(jsonElement));
+                // 格式化响应 JSON
+                StringBuilder formatted = new StringBuilder();
+                int indentLevel = 0;
+                boolean inQuotes = false;
+                
+                for (char c : responseBody.toCharArray()) {
+                    switch (c) {
+                        case '{':
+                        case '[':
+                            formatted.append(c).append("\n").append("    ".repeat(++indentLevel));
+                            break;
+                        case '}':
+                        case ']':
+                            formatted.append("\n").append("    ".repeat(--indentLevel)).append(c);
+                            break;
+                        case '"':
+                            inQuotes = !inQuotes;
+                            formatted.append(c);
+                            break;
+                        case ',':
+                            formatted.append(c);
+                            if (!inQuotes) {
+                                formatted.append("\n").append("    ".repeat(indentLevel));
+                            }
+                            break;
+                        case ':':
+                            formatted.append(c).append(" ");
+                            break;
+                        default:
+                            formatted.append(c);
+                    }
+                }
+                responseArea.setText(requestInfo.toString() + formatted.toString());
             } catch (Exception e) {
-                // 如果不是JSON，直接显示原始响应
+                // 如果不是 JSON，直接显示原始响应
                 responseArea.setText(requestInfo.toString() + responseBody);
             }
 
@@ -533,8 +623,8 @@ public class ApiDebugPanel extends JPanel {
             contentTabs.setSelectedIndex(2);
 
         } catch (Exception e) {
-            statusLabel.setText("Error: " + e.getMessage());
-            responseArea.setText("Error occurred while sending request:\n" + e.getMessage());
+            statusLabel.setText("错误: " + e.getMessage());
+            responseArea.setText("发送请求时发生错误:\n" + e.getMessage());
             contentTabs.setSelectedIndex(2);
         }
     }
