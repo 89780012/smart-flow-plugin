@@ -51,7 +51,7 @@ public class ProjectTreeCellRenderer extends DefaultTreeCellRenderer {
             panel.add(fileLabel);
             
             // 显示name
-            if (!bizFileInfo.getName().isEmpty()) {
+            if (bizFileInfo.getName()!=null && !bizFileInfo.getName().isEmpty()) {
                 JLabel nameLabel = new JLabel(" (" + bizFileInfo.getName() + ")");
                 nameLabel.setFont(JBUI.Fonts.label());
                 setLabelColors(nameLabel, selected, NAME_COLOR);
@@ -59,7 +59,7 @@ public class ProjectTreeCellRenderer extends DefaultTreeCellRenderer {
             }
             
             // 显示method和protocol
-            if (!bizFileInfo.getMethod().isEmpty()) {
+            if (bizFileInfo.getMethod()!=null && !bizFileInfo.getMethod().isEmpty()) {
                 JLabel methodLabel = new JLabel(" [" + bizFileInfo.getMethod() + "]");
                 methodLabel.setFont(JBUI.Fonts.label());
                 setLabelColors(methodLabel, selected, METHOD_COLOR);
@@ -67,7 +67,7 @@ public class ProjectTreeCellRenderer extends DefaultTreeCellRenderer {
             }
             
             // 显示URL
-            if (!bizFileInfo.getUrl().isEmpty()) {
+            if (bizFileInfo.getUrl()!=null && !bizFileInfo.getUrl().isEmpty()) {
                 JLabel urlLabel = new JLabel(" → " + bizFileInfo.getUrl());
                 urlLabel.setFont(JBUI.Fonts.label());
                 setLabelColors(urlLabel, selected, URL_COLOR);

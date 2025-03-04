@@ -321,6 +321,10 @@ public class ApiDebugPanel extends JPanel {
     }
 
     public void fillFromBizFile(BizFileInfo bizFileInfo) {
+        //表示为新创建的biz文件还未初始化
+        if(bizFileInfo.getMethod() == null || bizFileInfo.getMethod().isEmpty() || bizFileInfo.getUrl() == null || bizFileInfo.getUrl().isEmpty()){
+            return;
+        }
         // 设置请求方式
         methodCombo.setSelectedItem(bizFileInfo.getMethod().toUpperCase());
         

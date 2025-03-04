@@ -234,13 +234,6 @@ public class BizFilesPanel extends JPanel {
                     directory = (VirtualFile) userObject;
                 }
                     
-                // 目录节点的右键菜单
-                JMenuItem createFolder = new JMenuItem("创建文件夹", AllIcons.Nodes.Folder);
-                createFolder.addActionListener(e1 -> createNewFolder(directory));
-                popupMenu.add(createFolder);
-                
-                popupMenu.addSeparator();
-                
                 JMenuItem createBizFile = new JMenuItem("创建biz文件", AllIcons.FileTypes.Any_type);
                 createBizFile.addActionListener(e1 -> createNewBizFile(directory));
                 popupMenu.add(createBizFile);
@@ -607,78 +600,6 @@ public class BizFilesPanel extends JPanel {
                     "Error deleting file: " + ex.getMessage(),
                     "Delete Error"
                 );
-            }
-        }
-    }
-
-    private void createNewFolder(VirtualFile directory) {
-        // 获取当前目录的包路径
-        String packagePath = getPackagePath(directory);
-        
-        // 创建文件夹对话框
-        CreateDirectoryDialog dialog = new CreateDirectoryDialog(
-            project,
-            "创建新文件夹",
-            "请输入新文件夹名称:",
-            packagePath,  // 传入包路径作为初始值
-            AllIcons.Nodes.Folder
-        );
-        
-        if (dialog.showAndGet()) {
-            String folderPath = dialog.getEnteredPath();
-            if (folderPath != null && !folderPath.isEmpty()) {
-                try {
-                    WriteCommandAction.runWriteCommandAction(project, () -> {
-                        try {
-                            // 处理输入的路径
-                            String[] inputParts = folderPath.split("[./]");
-                            String[] baseParts = packagePath.split("\\.");
-                            
-                            // 找到共同前缀的长度
-                            int commonPrefixLength = 0;
-                            int minLength = Math.min(inputParts.length - 1, baseParts.length);
-                            for (int i = 0; i < minLength; i++) {
-                                if (inputParts[i].equals(baseParts[i])) {
-                                    commonPrefixLength++;
-                                } else {
-                                    break;
-                                }
-                            }
-                            
-                            // 从共同前缀开始往上回溯找到正确的起始目录
-                            VirtualFile current = directory;
-                            for (int i = baseParts.length - 1; i >= commonPrefixLength; i--) {
-                                current = current.getParent();
-                            }
-                            
-                            // 从共同前缀开始创建新的目录结构
-                            for (int i = commonPrefixLength; i < inputParts.length; i++) {
-                                String part = inputParts[i];
-                                if (!part.isEmpty()) {
-                                    VirtualFile child = current.findChild(part);
-                                    if (child == null || !child.exists()) {
-                                        current = current.createChildDirectory(this, part);
-                                    } else {
-                                        current = child;
-                                    }
-                                }
-                            }
-                            refreshProjectFiles();
-                        } catch (IOException ex) {
-                            Messages.showErrorDialog(
-                                project,
-                                "Error creating directory: " + ex.getMessage(),
-                                "Error"
-                            );
-                        }
-                    });
-                } catch (Exception ex) {
-                    Messages.showErrorDialog(
-                        project,
-                        "Error creating directory: " + ex.getMessage(),
-                        "Error"
-                    );
-                }
             }
         }
     }
@@ -1141,6 +1062,11 @@ public class BizFilesPanel extends JPanel {
 
     // 添加新的方法
     private void copyMarkdownToClipboard(BizFileInfo bizFileInfo) {
+
+        if(!checkBizFile(bizFileInfo)){
+            return;
+        }
+
         String markdown = BizMarkdownGenerator.generateMarkdown(bizFileInfo);
 
         StringBuilder combinedMd = new StringBuilder();
@@ -1165,7 +1091,25 @@ public class BizFilesPanel extends JPanel {
         Messages.showInfoMessage(project, "Markdown内容已复制到剪贴板", "复制成功");
     }
 
+    public boolean checkBizFile(BizFileInfo bizFileInfo) {
+        if(bizFileInfo.getName()== null || bizFileInfo.getName().isEmpty()){
+            Messages.showErrorDialog(project, "biz文件名称参数未设置", "错误");
+            return false;
+        }
+
+        if(bizFileInfo.getUrl()== null || bizFileInfo.getUrl().isEmpty()){
+            Messages.showErrorDialog(project, "biz文件Url未设置", "错误");
+            return false;
+        }
+        return true;
+    }
+
     private void saveMarkdownToFile(BizFileInfo bizFileInfo) {
+
+        if(!checkBizFile(bizFileInfo)){
+            return;
+        }
+
         String markdown = BizMarkdownGenerator.generateMarkdown(bizFileInfo);
         StringBuilder combinedMd = new StringBuilder();
         combinedMd.append("# API文档\n\n");

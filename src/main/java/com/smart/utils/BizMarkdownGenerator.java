@@ -11,11 +11,16 @@ public class BizMarkdownGenerator {
     
     // 生成单个接口的markdown文档
     public static String generateMarkdown(BizFileInfo bizFileInfo) {
+        //还未
+        if(bizFileInfo.getName() == null || bizFileInfo.getName().isEmpty() || bizFileInfo.getUrl() == null || bizFileInfo.getUrl().isEmpty()) {
+            return "";
+        }
+
         StringBuilder md = new StringBuilder();
         
         // 添加接口标题
         //md.append("# ").append(bizFileInfo.getName()).append("\n\n");
-        
+
         // 添加接口基本信息
         md.append("#### 基本信息\n\n");
         md.append("- **接口URL：** `").append(bizFileInfo.getUrl()).append("`\n");
