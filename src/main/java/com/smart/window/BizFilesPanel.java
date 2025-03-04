@@ -263,7 +263,7 @@ public class BizFilesPanel extends JPanel {
             } else if (userObject instanceof BizFileInfo) {
                 BizFileInfo bizFileInfo = (BizFileInfo) userObject;
 
-                JMenuItem openItem = new JMenuItem("打开当前文件", AllIcons.Actions.Menu_open);
+                JMenuItem openItem = new JMenuItem("打开当前文件", AllIcons.Actions.MenuOpen);
                 openItem.addActionListener(e1 -> openBizFile(bizFileInfo));
                 popupMenu.add(openItem);
                 
@@ -289,7 +289,7 @@ public class BizFilesPanel extends JPanel {
                 copyMarkdown.addActionListener(e1 -> copyMarkdownToClipboard(bizFileInfo));
                 markdownMenu.add(copyMarkdown);
                 
-                JMenuItem saveMarkdown = new JMenuItem("保存为文件", AllIcons.Actions.Menu_saveall);
+                JMenuItem saveMarkdown = new JMenuItem("保存为文件", AllIcons.Actions.MenuSaveall);
                 saveMarkdown.addActionListener(e1 -> saveMarkdownToFile(bizFileInfo));
                 markdownMenu.add(saveMarkdown);
                 
