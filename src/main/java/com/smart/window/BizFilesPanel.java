@@ -32,6 +32,15 @@ import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+import com.smart.utils.BizMarkdownGenerator;
 
 public class BizFilesPanel extends JPanel {
     private final Project project;
@@ -247,6 +256,17 @@ public class BizFilesPanel extends JPanel {
                 }
                 popupMenu.add(deleteItem);
                 
+                popupMenu.addSeparator();
+                
+                // 添加生成Markdown文档菜单
+                JMenu generateDocsMenu = new JMenu("生成API文档");
+                generateDocsMenu.setIcon(AllIcons.FileTypes.UiForm);
+                
+                JMenuItem singleDoc = new JMenuItem("生成文档", AllIcons.Actions.MenuSaveall);
+                singleDoc.addActionListener(e1 -> generateSingleMarkdown(directory));
+                generateDocsMenu.add(singleDoc);
+                
+                popupMenu.add(generateDocsMenu);
             } else if (userObject instanceof BizFileInfo) {
                 BizFileInfo bizFileInfo = (BizFileInfo) userObject;
 
@@ -265,6 +285,22 @@ public class BizFilesPanel extends JPanel {
                 JMenuItem deleteItem = new JMenuItem("删除", AllIcons.Actions.DeleteTag);
                 deleteItem.addActionListener(e1 -> deleteBizFile(bizFileInfo));
                 popupMenu.add(deleteItem);
+                
+                popupMenu.addSeparator();
+                
+                // 添加生成Markdown子菜单
+                JMenu markdownMenu = new JMenu("生成Markdown");
+                markdownMenu.setIcon(AllIcons.FileTypes.UiForm);
+                
+                JMenuItem copyMarkdown = new JMenuItem("复制到剪贴板", AllIcons.Actions.Copy);
+                copyMarkdown.addActionListener(e1 -> copyMarkdownToClipboard(bizFileInfo));
+                markdownMenu.add(copyMarkdown);
+                
+                JMenuItem saveMarkdown = new JMenuItem("保存为文件", AllIcons.Actions.Menu_saveall);
+                saveMarkdown.addActionListener(e1 -> saveMarkdownToFile(bizFileInfo));
+                markdownMenu.add(saveMarkdown);
+                
+                popupMenu.add(markdownMenu);
             }
         } else {
             // 多选状态下只显示删除选项
@@ -1103,4 +1139,130 @@ public class BizFilesPanel extends JPanel {
             Messages.showErrorDialog(project, "Failed to open file: " + e.getMessage(), "Error");
         }
     }
+
+    // 添加新的方法
+    private void copyMarkdownToClipboard(BizFileInfo bizFileInfo) {
+        String markdown = BizMarkdownGenerator.generateMarkdown(bizFileInfo);
+
+        StringBuilder combinedMd = new StringBuilder();
+        combinedMd.append("# API文档\n\n");
+        combinedMd.append("## 目录\n\n");
+
+        // 生成目录
+        combinedMd.append(String.format("%d. [%s](#%d-%s)\n",
+                1,
+                bizFileInfo.getName(),
+                1,
+                bizFileInfo.getName().replaceAll("\\s+", "-")));
+        combinedMd.append("\n---\n\n");
+        combinedMd.append(String.format("## %d. %s\n\n",   1, bizFileInfo.getName()));
+        combinedMd.append(markdown);
+        combinedMd.append("---\n\n");
+
+        StringSelection selection = new StringSelection(combinedMd.toString());
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(selection, selection);
+        
+        Messages.showInfoMessage(project, "Markdown内容已复制到剪贴板", "复制成功");
+    }
+
+    private void saveMarkdownToFile(BizFileInfo bizFileInfo) {
+        String markdown = BizMarkdownGenerator.generateMarkdown(bizFileInfo);
+        StringBuilder combinedMd = new StringBuilder();
+        combinedMd.append("# API文档\n\n");
+        combinedMd.append("## 目录\n\n");
+
+        // 生成目录
+        combinedMd.append(String.format("%d. [%s](#%d-%s)\n",
+                1,
+                bizFileInfo.getName(),
+                1,
+                bizFileInfo.getName().replaceAll("\\s+", "-")));
+        combinedMd.append("\n---\n\n");
+        combinedMd.append(String.format("## %d. %s\n\n",   1, bizFileInfo.getName()));
+        combinedMd.append(markdown);
+        combinedMd.append("---\n\n");
+
+        String combinedMdStr = combinedMd.toString();
+        
+        // 创建文件选择器
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("保存Markdown文件");
+        fileChooser.setSelectedFile(new File(bizFileInfo.getFile().getNameWithoutExtension() + ".md"));
+        
+        // 设置文件过滤器
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
+        fileChooser.setFileFilter(filter);
+        
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            // 确保文件有.md后缀
+            if (!file.getName().toLowerCase().endsWith(".md")) {
+                file = new File(file.getPath() + ".md");
+            }
+            
+            try {
+                Files.write(file.toPath(), combinedMdStr.getBytes(StandardCharsets.UTF_8));
+                Messages.showInfoMessage(project, "Markdown文件已保存到: " + file.getPath(), "保存成功");
+            } catch (IOException e) {
+                Messages.showErrorDialog(project, "保存文件失败: " + e.getMessage(), "错误");
+            }
+        }
+    }
+
+    // 添加新的方法
+    private void generateSingleMarkdown(VirtualFile directory) {
+        List<BizFileInfo> bizFiles = new ArrayList<>();
+        BizFileUtils.collectBizFiles(directory, bizFiles);
+        
+        if (bizFiles.isEmpty()) {
+            Messages.showInfoMessage(project, "未找到biz文件", "提示");
+            return;
+        }
+        
+        // 创建文件选择器
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("保存API文档");
+        fileChooser.setSelectedFile(new File("api-doc.md"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Markdown files (*.md)", "md"));
+        
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".md")) {
+                file = new File(file.getPath() + ".md");
+            }
+            
+            try {
+                StringBuilder combinedMd = new StringBuilder();
+                combinedMd.append("# API文档\n\n");
+                combinedMd.append("## 目录\n\n");
+                
+                // 生成目录
+                for (int i = 0; i < bizFiles.size(); i++) {
+                    BizFileInfo bizFile = bizFiles.get(i);
+                    combinedMd.append(String.format("%d. [%s](#%d-%s)\n", 
+                        i + 1, 
+                        bizFile.getName(),
+                        i + 1,
+                        bizFile.getName().replaceAll("\\s+", "-")));
+                }
+                combinedMd.append("\n---\n\n");
+                
+                // 生成详细文档
+                for (int i = 0; i < bizFiles.size(); i++) {
+                    BizFileInfo bizFile = bizFiles.get(i);
+                    combinedMd.append(String.format("## %d. %s\n\n", i + 1, bizFile.getName()));
+                    combinedMd.append(BizMarkdownGenerator.generateMarkdown(bizFile));
+                    combinedMd.append("---\n\n");
+                }
+                
+                Files.write(file.toPath(), combinedMd.toString().getBytes(StandardCharsets.UTF_8));
+                Messages.showInfoMessage(project, "API文档已保存到: " + file.getPath(), "生成成功");
+                
+            } catch (IOException e) {
+                Messages.showErrorDialog(project, "保存文件失败: " + e.getMessage(), "错误");
+            }
+        }
+    }
+
 } 

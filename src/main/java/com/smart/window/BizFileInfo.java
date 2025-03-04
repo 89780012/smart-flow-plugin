@@ -4,6 +4,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.smart.enums.DataType;
 import com.smart.enums.RequireType;
 import com.smart.enums.ParamType;
+import com.smart.enums.StepType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -149,8 +151,8 @@ public class BizFileInfo {
     // 返回结果配置
     public static class Results {
         private String responseStruct; // 响应结构
-        private String successCode;    // 成功码
-        private String description;    // 描述
+
+        private List<ResultInfo> result = new ArrayList<>(); // 返回字段列表
 
         public String getResponseStruct() {
             return responseStruct;
@@ -160,20 +162,61 @@ public class BizFileInfo {
             this.responseStruct = responseStruct;
         }
 
-        public String getSuccessCode() {
-            return successCode;
+        public List<ResultInfo> getResult() {
+            return result;
+        }
+        
+        public void setResult(List<ResultInfo> result) {
+            this.result = result;
         }
 
-        public void setSuccessCode(String successCode) {
-            this.successCode = successCode;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
+        // 返回字段信息类
+        public static class ResultInfo {
+            private String name;        // 字段名
+            private DataType type;      // 字段类型
+            private StepType stepType;  // 字段层级
+            private String description; // 描述
+            private String example;     // 示例值
+            
+            public String getName() {
+                return name;
+            }
+            
+            public void setName(String name) {
+                this.name = name;
+            }
+            
+            public DataType getType() {
+                return type;
+            }
+            
+            public void setType(DataType type) {
+                this.type = type;
+            }
+            
+            public StepType getStepType() {
+                return stepType;
+            }
+            
+            public void setStepType(StepType stepType) {
+                this.stepType = stepType;
+            }
+            
+            public String getDescription() {
+                return description;
+            }
+            
+            public void setDescription(String description) {
+                this.description = description;
+            }
+            
+            public String getExample() {
+                return example;
+            }
+            
+            public void setExample(String example) {
+                this.example = example;
+            }
         }
     }
 

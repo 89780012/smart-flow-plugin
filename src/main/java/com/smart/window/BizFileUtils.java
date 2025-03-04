@@ -5,6 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.smart.enums.DataType;
 import com.smart.enums.RequireType;
 import com.smart.enums.ParamType;
+import com.smart.enums.StepType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class BizFileUtils {
 
-    private static void collectBizFiles(VirtualFile dir, List<BizFileInfo> bizFiles) {
+    public static void collectBizFiles(VirtualFile dir, List<BizFileInfo> bizFiles) {
         if (dir == null || !dir.exists()) return;
    
         VirtualFile[] children = dir.getChildren();
@@ -147,6 +148,56 @@ public class BizFileUtils {
                     params.setBodyParams(bodyParamList);
                     params.setJsonParams(jsonParams);
                     bizFileInfo.setParams(params);
+                }
+                
+                // 解析results部分
+                NodeList resultsList = root.getElementsByTagName("results");
+                if (resultsList != null && resultsList.getLength() > 0) {
+                    Element resultsElement = (Element) resultsList.item(0);
+                    
+                    // 创建Results对象
+                    BizFileInfo.Results results = new BizFileInfo.Results();
+                    
+                    // 设置responseStruct
+                    String responseStruct = getElementText(resultsElement, "responseStruct");
+                    results.setResponseStruct(responseStruct);
+                    
+                    // 解析result标签列表
+                    NodeList resultNodes = resultsElement.getElementsByTagName("result");
+                    List<BizFileInfo.Results.ResultInfo> resultInfoList = new ArrayList<>();
+                    
+                    for (int i = 0; i < resultNodes.getLength(); i++) {
+                        Element resultElement = (Element) resultNodes.item(i);
+                        BizFileInfo.Results.ResultInfo resultInfo = new BizFileInfo.Results.ResultInfo();
+                        
+                        // 设置基本属性
+                        resultInfo.setName(getElementText(resultElement, "name"));
+                        resultInfo.setDescription(getElementText(resultElement, "description"));
+                        resultInfo.setExample(getElementText(resultElement, "example"));
+                        
+                        // 解析并设置type
+                        String typeStr = getElementText(resultElement, "type");
+                        try {
+                            DataType type = DataType.getByValue(Integer.parseInt(typeStr));
+                            resultInfo.setType(type != null ? type : DataType.STRING);
+                        } catch (NumberFormatException e) {
+                            resultInfo.setType(DataType.STRING); // 默认为String类型
+                        }
+                        
+                        // 解析并设置stepType
+                        String stepTypeStr = getElementText(resultElement, "stepType");
+                        try {
+                            StepType stepType = StepType.getByValue(Integer.parseInt(stepTypeStr));
+                            resultInfo.setStepType(stepType != null ? stepType : StepType.UNSTEP);
+                        } catch (NumberFormatException e) {
+                            resultInfo.setStepType(StepType.UNSTEP); // 默认为不提级
+                        }
+                        
+                        resultInfoList.add(resultInfo);
+                    }
+                    
+                    results.setResult(resultInfoList);
+                    bizFileInfo.setResults(results);
                 }
                 
                 return bizFileInfo;
