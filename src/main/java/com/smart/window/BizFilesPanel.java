@@ -408,26 +408,34 @@ public class BizFilesPanel extends JPanel {
         List<VirtualFile> bizFiles = new ArrayList<>();
         collectContent(directory, dirs, bizFiles);
         
+        // 如果当前目录及其子目录都没有biz文件，则不显示
+        if (!hasBizFiles(directory)) {
+            return;
+        }
+        
         // 处理目录
         for (VirtualFile dir : dirs) {
-            // 尝试获取可压缩的路径
-            Pair<String, VirtualFile> compressedInfo = getCompressiblePath(dir);
-            String compressedPath = compressedInfo.getFirst();
-            VirtualFile lastDir = compressedInfo.getSecond();
-            
-            if (!compressedPath.equals(dir.getName())) {
-                // 如果路径可以压缩，创建压缩节点
-                DefaultMutableTreeNode compressedNode = new DefaultMutableTreeNode(
-                    new CompressedDirectory(dir, compressedPath)
-                );
-                parent.add(compressedNode);
-                // 继续处理最后一个目录的内容
-                buildProjectTree(lastDir, compressedNode);
-            } else {
-                // 如果路径不能压缩，正常添加节点
-                DefaultMutableTreeNode dirNode = new DefaultMutableTreeNode(dir);
-                parent.add(dirNode);
-                buildProjectTree(dir, dirNode);
+            // 只处理包含biz文件的目录
+            if (hasBizFiles(dir)) {
+                // 尝试获取可压缩的路径
+                Pair<String, VirtualFile> compressedInfo = getCompressiblePath(dir);
+                String compressedPath = compressedInfo.getFirst();
+                VirtualFile lastDir = compressedInfo.getSecond();
+                
+                if (!compressedPath.equals(dir.getName())) {
+                    // 如果路径可以压缩，创建压缩节点
+                    DefaultMutableTreeNode compressedNode = new DefaultMutableTreeNode(
+                        new CompressedDirectory(dir, compressedPath)
+                    );
+                    parent.add(compressedNode);
+                    // 继续处理最后一个目录的内容
+                    buildProjectTree(lastDir, compressedNode);
+                } else {
+                    // 如果路径不能压缩，正常添加节点
+                    DefaultMutableTreeNode dirNode = new DefaultMutableTreeNode(dir);
+                    parent.add(dirNode);
+                    buildProjectTree(dir, dirNode);
+                }
             }
         }
         
@@ -444,17 +452,28 @@ public class BizFilesPanel extends JPanel {
         }
     }
 
-    private boolean containsBizFiles(VirtualFile dir) {
-        VirtualFile[] children = dir.getChildren();
+    // 添加新的辅助方法，检查目录及其子目录是否包含biz文件
+    private boolean hasBizFiles(VirtualFile directory) {
+        if (directory == null || !directory.exists()) {
+            return false;
+        }
+        
+        // 检查当前目录
+        VirtualFile[] children = directory.getChildren();
+        if (children == null) {
+            return false;
+        }
+        
         for (VirtualFile child : children) {
-            if (child.isDirectory()) {
-                if (containsBizFiles(child)) {
-                    return true;
-                }
-            } else if ("biz".equals(child.getExtension())) {
+            if (!child.isDirectory() && "biz".equals(child.getExtension())) {
+                return true;
+            }
+            
+            if (child.isDirectory() && hasBizFiles(child)) {
                 return true;
             }
         }
+        
         return false;
     }
 
@@ -713,26 +732,6 @@ public class BizFilesPanel extends JPanel {
         public String getEnteredPath() {
             return pathField.getText().trim();
         }
-    }
-
-    // 添加新方法：展开包含biz文件的路径
-    private void expandBizContainingPaths() {
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode) treeModel.getRoot();
-        Enumeration<?> e = root.depthFirstEnumeration();
-        
-        while (e.hasMoreElements()) {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
-            if (node.getUserObject() instanceof VirtualFile) {
-                VirtualFile file = (VirtualFile) node.getUserObject();
-                if (file.isDirectory() && containsBizFiles(file)) {
-                    TreePath path = new TreePath(node.getPath());
-                    fileTree.expandPath(path);
-                }
-            }
-        }
-        
-        // 始终展开根节点
-        fileTree.expandRow(0);
     }
 
     // 添加新的辅助方法
