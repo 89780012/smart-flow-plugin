@@ -22,8 +22,6 @@ import java.util.UUID;
 public final class LicenseService {
     private static final String LICENSE_CHECK_URL = SmartPluginSettings.API_DOMAIN+ "/auth-codes/activate";
     private String expiresAt;
-    private static final NotificationGroup NOTIFICATION_GROUP = 
-            NotificationGroupManager.getInstance().getNotificationGroup("Smart Flow Notifications");
 
     public static LicenseService getInstance() {
         return ApplicationManager.getApplication().getService(LicenseService.class);
@@ -113,7 +111,7 @@ public final class LicenseService {
 
     public void showActivationNotification(Project project) {
         if (!PluginCache.isValidLicense) {
-            Notification notification = NOTIFICATION_GROUP.createNotification(
+            Notification notification =  NotificationGroupManager.getInstance().getNotificationGroup("Smart Flow Notifications").createNotification(
                 "Smart Plugin 需要激活",
                 "插件未激活，点击此处进行激活",
                 NotificationType.WARNING
