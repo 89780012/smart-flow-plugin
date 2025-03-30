@@ -128,21 +128,18 @@ public class VisualLayoutPanel {
     
     public VisualLayoutPanel(Map<String,Object> propertyMap, VirtualFile file,Project project) {
         this.project = project;
-        this.createVisualLayoutPanel();
+        this.createCanvasLayout();
         this.currentFile = file;
-        
         // 从源码中加载组件
         utils = new SourseCodeUtils(propertyMap, canvasPanel, file, this);
         utils.loadComponentsFromSource();
-
         PluginCache.sourseCodeUtils = utils;
     }
 
     //创建画布
-    public JPanel createVisualLayoutPanel() {
+    public JPanel createCanvasLayout() {
         // 创建一个JPanel作为根容器，使用BorderLayout
         mainPanel = new JPanel(new BorderLayout());
-        
         // 创建一个视口面板
         viewPort = new JPanel(new BorderLayout());
         viewPort.setPreferredSize(new Dimension(800, 600));

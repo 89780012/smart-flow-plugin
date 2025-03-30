@@ -34,6 +34,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+
+import com.smart.utils.TabButtonUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -61,7 +63,6 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     private VisualLayoutPanel visualLayoutPanel;
     //局部属性
     private Map<String, Object> propertyMap = new HashMap();
-
     private JPanel leftPanel;
     private JScrollPane functionPanel;
     private JSplitPane leftSplitPane;
@@ -69,7 +70,10 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     private JToggleButton functionTab;
     private ResizablePanel leftComponentTree; // 左侧组件树
     private JPanel componentTreePanel; //组件树
-    private JPanel centerPanel;
+
+    private JPanel leftContainer; //左侧容器, 包含左侧tab标签 以及扩展面板
+    private JPanel centerContainer;  //中间容器，包含画布
+    private JPanel rightContainer; //右侧区域，包含垂直tab 以及扩展面板
 
     private Tree componentTree; // 组件树实例
 
@@ -105,24 +109,34 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
             }
         });
 
-        //中间区域
-        centerPanel = new JPanel(new BorderLayout());
+        //===============左侧容器面板===============
+        leftContainer = new JPanel(new BorderLayout());
+        //左侧tab页
+        JPanel leftTabPanel = createLeftTabPanel();
+        leftContainer.add(leftTabPanel, BorderLayout.WEST);
         // 左侧组件树
         leftComponentTree = createLeftComponentTree();
-        centerPanel.add(leftComponentTree, BorderLayout.WEST);
+        leftContainer.add(leftComponentTree, BorderLayout.CENTER);
+        mainPanel.add(leftContainer, BorderLayout.WEST);
+        //===============左侧容器面板===============
+
+        //===============画布区域==================
+        //中间区域
+        centerContainer = new JPanel(new BorderLayout());
         // 中间画布
         VisualLayoutPanel vPanel = new VisualLayoutPanel(propertyMap, file, project);
         JPanel viewPortPanel = vPanel.getLayeredPane();
-        centerPanel.add(viewPortPanel, BorderLayout.CENTER);
+        centerContainer.add(viewPortPanel, BorderLayout.CENTER);
+        mainPanel.add(centerContainer, BorderLayout.CENTER);
+        //===============画布区域==================
 
-        //左侧tab页
-        JPanel leftTabPanel = createLeftTabPanel();
-        mainPanel.add(leftTabPanel, BorderLayout.WEST);
-
-        //左侧组件树域和画布区域在中间
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-        // 右侧侧边栏
-        sidebarPanel = new SidebarPanel(propertyMap, vPanel,centerPanel,file);
+        //===============右侧容器面板==================
+        // 右侧垂直侧边栏
+        rightContainer = new JPanel(new BorderLayout());
+        sidebarPanel = new SidebarPanel(propertyMap,file);
+        rightContainer.add(sidebarPanel.getMainContainer());
+        mainPanel.add(rightContainer,BorderLayout.EAST);
+        //===============右侧容器面板==================
 
         // 为mainPanel添加下边框，仿照IDEA风格
         mainPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -164,40 +178,8 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     }
 
     private JToggleButton createTabButton(String tooltip, Icon icon, boolean selected) {
-        // 创建带图标和文字的按钮
-        JToggleButton button = new JToggleButton(tooltip, icon) {
-            @Override
-            public void updateUI() {
-                super.updateUI();
-                setUI(new CustomToggleButtonUI());
-            }
-            // 确保按钮完全不透明
-            @Override
-            public boolean isOpaque() {
-                return true;
-            }
-        };
 
-        // 设置按钮基本属性
-        button.setSelected(selected);
-        button.setToolTipText(tooltip);
-        button.setPreferredSize(new Dimension(40, 40));
-        button.setMaximumSize(new Dimension(40, 40));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-
-        // 设置图标和文字的位置关系
-        button.setVerticalTextPosition(SwingConstants.BOTTOM);
-        button.setHorizontalTextPosition(SwingConstants.CENTER);
-
-        // 设置文字体
-        button.setFont(new Font(button.getFont().getName(), Font.PLAIN, 10));
-
-        // 设置按钮样式
-        button.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        // 设置默认背景色
-        button.setBackground(null);
-
+        JToggleButton button = TabButtonUtils.createTabButton(tooltip,icon,selected);
         // 添加击事件
         button.addActionListener(e -> {
             boolean isSelected = button.isSelected();

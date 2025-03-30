@@ -13,6 +13,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.Map;
 import com.intellij.ide.util.PropertiesComponent;
+import com.smart.utils.TabButtonUtils;
 
 public class SidebarPanel extends JPanel {
     private static final String SIDEBAR_WIDTH_KEY = "smart.sidebar.width";
@@ -21,62 +22,29 @@ public class SidebarPanel extends JPanel {
     private boolean isPanelVisible = false;
     private static final int PANEL_WIDTH = 450;
     private static final int MAX_PANEL_WIDTH = 800;
-    private static final int MIN_PANEL_WIDTH = 40;
+    private static final int MIN_PANEL_WIDTH = 0;
     private static int NEW_WIDTH = 450;
-    private VisualLayoutPanel visualLayoutPanel;
     //前端属性配置
     private Map<String,Object> propertyMap;
     private String bizId;
-    private JPanel centerPanel;
     private VirtualFile file;
-    private JPanel sidebarButtonsPanel;
+    private JPanel tabsPanel;
     private JToggleButton selectedButton;
     private ResizablePanel resizablePanel;
+    private JPanel mainContainer;
 
-    public SidebarPanel(Map<String,Object> propertyMap, VisualLayoutPanel visualLayoutPanel ,JPanel centerPanel, VirtualFile file) {
+    public SidebarPanel(Map<String,Object> propertyMap,VirtualFile file) {
         this.file = file;
-        this.centerPanel = centerPanel;
         this.propertyMap = propertyMap;
         this.bizId = propertyMap.get("id").toString();
-        this.visualLayoutPanel = visualLayoutPanel;
-        
         // 读取保存的宽度
         NEW_WIDTH = PropertiesComponent.getInstance().getInt(SIDEBAR_WIDTH_KEY, PANEL_WIDTH);
         // 创建主面板内容
-        JPanel mainContent = createMainContent();
-        resizablePanel = new ResizablePanel(mainContent, ResizablePanel.LEFT, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH);
-        // 初始化时使用最小宽度，但不影响后续拖拽
-        resizablePanel.setPreferredSize(new Dimension(MIN_PANEL_WIDTH, -1));
-        // 修改宽度变化监听
-        resizablePanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                if (isPanelVisible) {
-                    int currentWidth = resizablePanel.getWidth();
-                    // 只在实际拖拽时(宽度大于最小值)才处理
-                    if (currentWidth > MIN_PANEL_WIDTH) {
-                        if (currentWidth > MAX_PANEL_WIDTH) {
-                            currentWidth = MAX_PANEL_WIDTH;
-                            resizablePanel.setPreferredSize(new Dimension(currentWidth, -1));
-                            resizablePanel.revalidate();
-                        }
-                        // 保存当前宽度
-                        NEW_WIDTH = currentWidth;
-                        PropertiesComponent.getInstance().setValue(SIDEBAR_WIDTH_KEY, currentWidth, PANEL_WIDTH);
-                    }
-                }
-            }
-        });
-        
-        // 添加左侧边框，因为是从右向左展开
-        resizablePanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 1, 0, 0, new JBColor(Gray._200, Gray._80)),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
-        
-        // 将可调整大小的面板添加到centerPanel的东部
-        centerPanel.add(resizablePanel, BorderLayout.EAST);
-        centerPanel.revalidate(); // 确保初始布局正确
+        mainContainer = createMainContainer();
+    }
+
+    public JPanel getMainContainer(){
+        return mainContainer;
     }
 
     /**
@@ -103,8 +71,6 @@ public class SidebarPanel extends JPanel {
         
         SwingUtilities.invokeLater(() -> {
             resizablePanel.revalidate();
-            centerPanel.revalidate();
-            centerPanel.repaint();
         });
         isPanelVisible = visible;
     }
@@ -112,48 +78,6 @@ public class SidebarPanel extends JPanel {
     // 创建属性标签页
     private JPanel createPropertiesPanel() {
         return new PropertyPanel(propertyMap,file);
-    }
-
-    // 创建组件标签页
-    private JPanel createComponentsPanel() {
-        ComponentListPanel componentListPanel = new ComponentListPanel(visualLayoutPanel);
-        return componentListPanel;
-    }
-
-    // 创建数据标签页
-    private JPanel createDataPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(null);
-        
-        // 创建说明标签
-        JLabel instructionLabel = new JLabel("选择画布中的组件以查看其配置");
-        instructionLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        instructionLabel.setBorder(null);
-        
-        panel.add(instructionLabel, BorderLayout.CENTER);
-        
-        // 添加组件选择监听
-        if (visualLayoutPanel != null) {
-            visualLayoutPanel.addComponentSelectionListener(componentId -> {
-                panel.removeAll();
-                if (componentId != null) {
-                    ComponentConfigPanel configPanel = new ComponentConfigPanel(
-                        componentId,
-                        bizId,
-                        visualLayoutPanel.getProject(),
-                        visualLayoutPanel.getCanvasPanel(),
-                        visualLayoutPanel.getCurrentFile()
-                    );
-                    panel.add(configPanel, BorderLayout.CENTER);
-                } else {
-                    panel.add(instructionLabel, BorderLayout.CENTER);
-                }
-                panel.revalidate();
-                panel.repaint();
-            });
-        }
-        
-        return panel;
     }
 
     // 添加助方法来查找组件
@@ -173,80 +97,76 @@ public class SidebarPanel extends JPanel {
     }
 
     // 创建主要内容的方法
-    private JPanel createMainContent() {
+    private JPanel createMainContainer() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(null);
 
-        // 使用初始化的 cardLayout
+        //右侧垂直按钮的扩展面板
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBorder(null);
         
         // 添加各个内容面板
         contentPanel.add(createPropertiesPanel(), "属性");
-        contentPanel.add(createComponentsPanel(), "组件");
-        contentPanel.add(createDataPanel(), "数据");
-        
-        // 创建右侧按钮面板
-        sidebarButtonsPanel = createSidebarButtons();
+        handleContentPanel(contentPanel);
+
+        // 创建右侧侧边比标签
+        tabsPanel = createSidebarTabs();
 
         // 内容面板在左侧，按钮面板在右侧
-        mainPanel.add(contentPanel, BorderLayout.CENTER);
-        mainPanel.add(sidebarButtonsPanel, BorderLayout.EAST);
+        mainPanel.add(resizablePanel, BorderLayout.CENTER);
+        mainPanel.add(tabsPanel, BorderLayout.EAST);
         // 默认隐藏内容
         contentPanel.setVisible(false);
         return mainPanel;
     }
 
-    private JPanel createSidebarButtons() {
+    private void handleContentPanel(JComponent component){
+        resizablePanel = new ResizablePanel(component, ResizablePanel.LEFT, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH);
+        // 初始化时使用最小宽度，但不影响后续拖拽
+        resizablePanel.setPreferredSize(new Dimension(MIN_PANEL_WIDTH, -1));
+        // 修改宽度变化监听
+        resizablePanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (isPanelVisible) {
+                    int currentWidth = resizablePanel.getWidth();
+                    // 只在实际拖拽时(宽度大于最小值)才处理
+                    if (currentWidth > MIN_PANEL_WIDTH) {
+                        if (currentWidth > MAX_PANEL_WIDTH) {
+                            currentWidth = MAX_PANEL_WIDTH;
+                            resizablePanel.setPreferredSize(new Dimension(currentWidth, -1));
+                            resizablePanel.revalidate();
+                        }
+                        // 保存当前宽度
+                        NEW_WIDTH = currentWidth;
+                        PropertiesComponent.getInstance().setValue(SIDEBAR_WIDTH_KEY, currentWidth, PANEL_WIDTH);
+                    }
+                }
+            }
+        });
+
+        // 添加左侧边框，因为是从右向左展开
+        resizablePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 1, 0, 0, new JBColor(Gray._200, Gray._80)),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        ));
+
+    }
+
+    private JPanel createSidebarTabs() {
         JPanel tabPanel = new JPanel();
         tabPanel.setLayout(new BoxLayout(tabPanel, BoxLayout.Y_AXIS));
         tabPanel.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, JBColor.border()));
         tabPanel.setPreferredSize(new Dimension(40, -1));
 
         JToggleButton btnProperties = createTabButton("属性", AllIcons.Nodes.Property, false);
-        JToggleButton btnComp = createTabButton("组件", AllIcons.Nodes.Plugin, false);
-        JToggleButton btnData = createTabButton("数据", AllIcons.Nodes.DataSchema, false);
-
         tabPanel.add(btnProperties);
-        tabPanel.add(btnComp);
-        tabPanel.add(btnData);
-        tabPanel.add(Box.createVerticalGlue());
+        tabPanel.add(Box.createVerticalGlue());  //弹性布局
         return tabPanel;
     }
 
     private JToggleButton createTabButton(String tooltip, Icon icon, boolean selected) {
-        // 创建按钮
-        JToggleButton button = new JToggleButton(tooltip, icon) {
-            @Override
-            public void updateUI() {
-                super.updateUI();
-                setUI(new CustomToggleButtonUI());
-            }
-            // 确保按钮完全不透明
-            @Override
-            public boolean isOpaque() {
-                return true;
-            }
-        };
-
-        // 设置按钮属性
-        button.setLayout(new BorderLayout());
-        button.setSelected(selected);
-        button.setToolTipText(tooltip);
-        button.setPreferredSize(new Dimension(40, 40));
-        button.setMaximumSize(new Dimension(40, 40));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        // 设置文字体
-        button.setFont(new Font(button.getFont().getName(), Font.PLAIN, 10));
-        button.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        button.setBackground(null);
-        // 设置图标和文字的位置关系
-        button.setVerticalTextPosition(SwingConstants.BOTTOM);
-        button.setHorizontalTextPosition(SwingConstants.CENTER);
-        
+        JToggleButton button = TabButtonUtils.createTabButton(tooltip,icon,selected);
         // 重构点击事件处理
         button.addActionListener(e -> {
             if (selectedButton == button) {
