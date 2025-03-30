@@ -1620,11 +1620,8 @@ public class VisualLayoutPanel {
             JLabel nameLabel = (JLabel) originalLayeredPane.getClientProperty("nameLabel");
             String name = nameLabel.getText();
 
-            // 创建新的ComponentItem
-            String iconPath = PluginCache.componentIconMap.getOrDefault(name, "/icons/biz.svg");
-
             ComponentItem newItem = PluginCache.componentItemMap.get(originalInfo.getType());
-            newItem.setIconPath(iconPath);
+            newItem.setIconPath(newItem.getIconPath());
             newItem.setName(name);
             // 添加新的组件到画布
             addComponent(newItem, newLocation, newId,false);
