@@ -259,18 +259,7 @@ public class PropertyPanel extends JPanel {
         globalTransactionCheckBox.addActionListener(e -> propertyMap.put("global_sql_transaction", globalTransactionCheckBox.isSelected()));
         sqlRowPanel.add(globalTransactionCheckBox);
         // 添加网址链接
-        JLabel linkLabel = new JLabel("<html><a href='https://example.com'>更多信息</a></html>");
-        linkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        linkLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                try {
-                    Desktop.getDesktop().browse(new URI("https://example.com"));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
+        JLabel linkLabel = new JLabel("<html><a href='#'>文档: 核心概念>工作流>基本属性>流程设置</a></html>");
         sqlRowPanel.add(Box.createHorizontalStrut(5));
         sqlRowPanel.add(linkLabel);
         sqlRowPanel.add(Box.createHorizontalGlue());
