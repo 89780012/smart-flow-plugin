@@ -23,6 +23,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.util.Map;
 import com.smart.event.*;
@@ -33,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.smart.settings.SmartPluginSettings;
+import com.smart.utils.AlertUtils;
 
 import javax.swing.SwingWorker;
 import java.util.HashMap;
@@ -170,9 +173,14 @@ public class PropertyPanel extends JPanel {
     }
 
     private JPanel createBasicPropertiesPanel() {
-        // 使用 BoxLayout 实现垂直布局
+        // 创建一个包装面板，添加边距
+        JPanel wrapperPanel = new JPanel(new BorderLayout());
+        wrapperPanel.setBorder(JBUI.Borders.empty(5));
+
+        //======================接口属性========================
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("接口设置"));
 
         JTextField idField =  createTextField(propertyMap.get("id"));
         // ID 属性
@@ -231,29 +239,44 @@ public class PropertyPanel extends JPanel {
             propertyMap.put("protocol", protocolCombo.getSelectedItem());
             // 触发保存事件
             EventBus.getInstance().post(EventType.UPDATE_SOURCE_CODE + "_" + file.getPath(), propertyMap);
-            // 成功提示改为气泡提示3秒自动消失
-            SwingUtilities.invokeLater(() -> {
-                JBPopupFactory.getInstance()
-                        .createBalloonBuilder(new JLabel("保存成功"))
-                        .setFadeoutTime(3000)
-                        .createBalloon()
-                        .show(RelativePoint.getNorthWestOf(saveButton), Balloon.Position.above);
-            });
+            AlertUtils.alertOnAbove(saveButton, "保存成功");
         });
         buttonPanel.add(saveButton);
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, JBUI.scale(30)));
         panel.add(buttonPanel);
         // 添加一个弹性空间填充底部
         panel.add(Box.createVerticalGlue());
-        
-        // 包装在滚动面板中
-        JScrollPane scrollPane = new JBScrollPane(panel);
-        scrollPane.setBorder(null);
-        // 创建一个包装面板，添加边距
-        JPanel wrapperPanel = new JPanel(new BorderLayout());
-        wrapperPanel.setBorder(JBUI.Borders.empty(10));
-        wrapperPanel.add(scrollPane, BorderLayout.CENTER);
-        
+        wrapperPanel.add(panel, BorderLayout.NORTH);
+        //======================接口属性========================
+        //======================流程设置========================
+        JPanel flowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        flowPanel.setBorder(BorderFactory.createTitledBorder("流程设置"));
+        // SQL事务
+        JPanel sqlRowPanel = new JPanel();
+        sqlRowPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        JCheckBox globalTransactionCheckBox = new JCheckBox("开启SQL事务");
+        globalTransactionCheckBox.setSelected(Boolean.TRUE.equals(propertyMap.get("global_sql_transaction")));
+        globalTransactionCheckBox.addActionListener(e -> propertyMap.put("global_sql_transaction", globalTransactionCheckBox.isSelected()));
+        sqlRowPanel.add(globalTransactionCheckBox);
+        // 添加网址链接
+        JLabel linkLabel = new JLabel("<html><a href='https://example.com'>更多信息</a></html>");
+        linkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        linkLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    Desktop.getDesktop().browse(new URI("https://example.com"));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        sqlRowPanel.add(Box.createHorizontalStrut(5));
+        sqlRowPanel.add(linkLabel);
+        sqlRowPanel.add(Box.createHorizontalGlue());
+        flowPanel.add(sqlRowPanel);
+        wrapperPanel.add(flowPanel, BorderLayout.CENTER);
+        //======================流程设置========================
         return wrapperPanel;
     }
 

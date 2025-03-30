@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.smart"
-version = "1.1.5"
+version = "1.1.6"
 
 repositories {
     maven { url = uri("https://maven.aliyun.com/repository/public") }

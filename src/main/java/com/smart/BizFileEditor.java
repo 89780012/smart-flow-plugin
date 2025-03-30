@@ -34,6 +34,7 @@ import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
+import com.smart.utils.SourseCodeUtils;
 import com.smart.utils.ToggleButtonUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -61,7 +62,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     private SidebarPanel sidebarPanel;
     private VisualLayoutPanel visualLayoutPanel;
     //局部属性
-    private Map<String, Object> propertyMap = new HashMap();
+    private Map<String, Object> propertyMap = null;
     private JPanel leftPanel;
     private JScrollPane functionPanel;
     private JSplitPane leftSplitPane;
@@ -99,7 +100,9 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         this.file = file;
         this.mainPanel = new JPanel(new BorderLayout());
         PluginCache.project = project;
-        loadComponentConfig(); // 加载组件配置
+        propertyMap = new HashMap<>();  //独属于当个file的变量
+        initComponentConfig(); // 加载组件配置
+
 
         mainPanel.addFocusListener(new FocusAdapter() {
             @Override
@@ -123,7 +126,8 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         //中间区域
         centerContainer = new JPanel(new BorderLayout());
         // 中间画布
-        VisualLayoutPanel vPanel = new VisualLayoutPanel(propertyMap, file, project);
+        VisualLayoutPanel vPanel = new VisualLayoutPanel(file, project);
+        initBizConfig(vPanel); //画布初始化后 加载biz配置
         JPanel viewPortPanel = vPanel.getLayeredPane();
         centerContainer.add(viewPortPanel, BorderLayout.CENTER);
         mainPanel.add(centerContainer, BorderLayout.CENTER);
@@ -150,6 +154,16 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         archiveManager = new ArchiveManager(project, file ,this);
         PluginCache.archiveManager = archiveManager;
 
+    }
+
+    //加载biz配置到
+    private SourseCodeUtils initBizConfig(VisualLayoutPanel visualLayoutPanel){
+        // 从源码中加载组件
+        SourseCodeUtils sourseCodeUtils = new SourseCodeUtils(file, propertyMap);
+        sourseCodeUtils.initVPanel(visualLayoutPanel);
+        sourseCodeUtils.loadComponentsFromSource();
+        PluginCache.sourseCodeUtils = sourseCodeUtils;
+        return sourseCodeUtils;
     }
 
     private JPanel createLeftTabPanel() {
@@ -340,7 +354,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     /**
      * 加载置文件
      */
-    private void loadComponentConfig() {
+    private void initComponentConfig() {
         // 加载内置件配置
         loadBuiltInComponents();
         // 加载项目自定义组件置
@@ -753,7 +767,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     public void dispose() {
         // 解绑UI事件
         if (visualLayoutPanel != null && file != null) {
-            visualLayoutPanel.getUtils().unregisterUIEvent(file.getPath());
+            PluginCache.sourseCodeUtils.unregisterUIEvent(file.getPath());
         }
         if (visualLayoutPanel != null) {
             visualLayoutPanel.dispose();

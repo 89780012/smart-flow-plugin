@@ -47,24 +47,26 @@ public class SourseCodeUtils {
     private List<ComponentInfo> components;
     private List<Connection> connections = new ArrayList<>();
     private JPanel canvasPanel;
-    private final VirtualFile file;
+    private VirtualFile file;
     private VisualLayoutPanel vPanel;
     // 添加原子变量控制显示状态
     private final AtomicBoolean isShowingMessage = new AtomicBoolean(false);
 
-    public SourseCodeUtils(Map<String, Object> propertyMap,
-            JPanel canvasPanel, VirtualFile file,
-            VisualLayoutPanel vPanel) {
-        this.propertyMap = propertyMap;
-        this.file = file;
-        this.vPanel = vPanel;
-        this.components = vPanel.getComponents();
-        this.connections = vPanel.getConnections();
-        this.canvasPanel = canvasPanel;
 
+    public SourseCodeUtils(VirtualFile file,Map<String, Object> propertyMap){
+        this.file = file;
+        this.propertyMap = propertyMap;
         // 注册事件
         regisUIEvent(this.file.getPath());
     }
+
+    public void initVPanel(VisualLayoutPanel vPanel){
+        this.vPanel = vPanel;
+        this.components = vPanel.getComponents();
+        this.connections = vPanel.getConnections();
+        this.canvasPanel = vPanel.getCanvasPanel();
+    }
+
 
     public String getBizId(){
         return String.valueOf(propertyMap.get("id"));
@@ -92,6 +94,7 @@ public class SourseCodeUtils {
             appendTextElement(doc, rootElement, "url", String.valueOf(propertyMap.get("url")));
             appendTextElement(doc, rootElement, "protocol", String.valueOf(propertyMap.get("protocol")));
             appendTextElement(doc, rootElement, "method", String.valueOf(propertyMap.get("method")));
+            appendTextElement(doc, rootElement, "global_sql_transaction", String.valueOf(propertyMap.get("global_sql_transaction")));
 
             // 入参处理
             Element paramsElement = doc.createElement("params");
@@ -351,6 +354,8 @@ public class SourseCodeUtils {
                     appendTextElement(doc, rootElement, "name", "");
                     appendTextElement(doc, rootElement, "protocol", HttpProtocol.JSON.getValue());
                     appendTextElement(doc, rootElement, "method", HttpMethod.GET.getValue());
+                    appendTextElement(doc, rootElement, "global_sql_transaction", "false");
+
 
                     //增加results标签
                     appendTextElement(doc, rootElement, "results", "");
@@ -362,6 +367,7 @@ public class SourseCodeUtils {
                     propertyMap.put("name", "");
                     propertyMap.put("protocol", HttpProtocol.JSON.getValue());
                     propertyMap.put("method", HttpMethod.GET.getValue());
+                    propertyMap.put("global_sql_transaction", false);
 
                     // 保存文件
                     TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -440,6 +446,9 @@ public class SourseCodeUtils {
             propertyMap.put("protocol", getElementTextContent(bizElement, "protocol"));
             propertyMap.put("method", getElementTextContent(bizElement, "method"));
             propertyMap.put("name", getElementTextContent(bizElement, "name"));
+
+            String global_sql_transaction = getElementTextContent(bizElement, "global_sql_transaction");
+            propertyMap.put("global_sql_transaction",  global_sql_transaction.equals("") ? false: Boolean.valueOf(global_sql_transaction));
         }
 
         // 解析入参 - 修改这部分逻辑以处理多种参数类型

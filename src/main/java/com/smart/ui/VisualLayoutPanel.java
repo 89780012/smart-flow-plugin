@@ -18,7 +18,6 @@ import com.smart.listener.MouseOverBtnAdapter;
 import com.smart.tasks.AsyncTaskManager;
 import com.smart.utils.AlertUtils;
 import com.smart.utils.IconUtils;
-import com.smart.utils.SourseCodeUtils;
 import com.smart.utils.ToggleButtonUtils;
 
 import javax.swing.*;
@@ -61,7 +60,6 @@ public class VisualLayoutPanel {
     // 在类的开头添加一个用于存储复制的组件的列表
     private List<ComponentInfo> copiedComponents = new ArrayList<>();
 
-    private SourseCodeUtils utils = null;
     private boolean isPanning = true; // 是否正在平移画布
     private Point lastPanPoint; // 上次平移的位置
     private JPanel viewPort;
@@ -99,39 +97,17 @@ public class VisualLayoutPanel {
         void onComponentSelected(String componentId);
     }
 
-    public SourseCodeUtils getUtils(){
-        return this.utils;
-    }
 
-
-    public void addComponentSelectionListener(ComponentSelectionListener listener) {
-        selectionListeners.add(listener);
-    }
-    
-    public void removeComponentSelectionListener(ComponentSelectionListener listener) {
-        selectionListeners.remove(listener);
-    }
-
-
-    
     protected void fireComponentSelected(String componentId) {
         for (ComponentSelectionListener listener : selectionListeners) {
             listener.onComponentSelected(componentId);
         }
     }
     
-    public Project getProject() {
-        return project;
-    }
-    
-    public VisualLayoutPanel(Map<String,Object> propertyMap, VirtualFile file,Project project) {
+    public VisualLayoutPanel(VirtualFile file,Project project) {
         this.project = project;
         this.createCanvasLayout();
         this.currentFile = file;
-        // 从源码中加载组件
-        utils = new SourseCodeUtils(propertyMap, canvasPanel, file, this);
-        utils.loadComponentsFromSource();
-        PluginCache.sourseCodeUtils = utils;
     }
 
     //创建画布
@@ -358,15 +334,15 @@ public class VisualLayoutPanel {
                         if (isDraggingStartPoint) {
                             draggingConnection.startPoint = newEndpoint;
                             draggingConnection.start = PluginCache.componentInfoMap.get(
-                                utils.getComponentId(String.valueOf(targetComponent.getClientProperty("id"))));
+                                PluginCache.sourseCodeUtils.getComponentId(String.valueOf(targetComponent.getClientProperty("id"))));
                         } else {
                             draggingConnection.endPoint = newEndpoint;
                             draggingConnection.end = PluginCache.componentInfoMap.get(
-                                utils.getComponentId(String.valueOf(targetComponent.getClientProperty("id"))));
+                                PluginCache.sourseCodeUtils.getComponentId(String.valueOf(targetComponent.getClientProperty("id"))));
                         }
 
                         // 更新源代码
-                        utils.updateSourceCode();
+                        PluginCache.sourseCodeUtils.updateSourceCode();
                     } else {
                         // 如果没有拖到组件上,恢复原始位置
                         if (isDraggingStartPoint) {
@@ -405,7 +381,7 @@ public class VisualLayoutPanel {
                     if (componentAtPoint != null) {
                         String id = (String) componentAtPoint.getClientProperty("id");
                         updateComponentPosition(id, componentAtPoint.getLocation());
-                        utils.updateSourceCode();
+                        PluginCache.sourseCodeUtils.updateSourceCode();
                     }
                 }
                 draggedConnection = null;
@@ -728,7 +704,7 @@ public class VisualLayoutPanel {
             // 如果原组件有连接线，可以选择是否复制连接线
             // 这里不复制连接线，确保粘贴后的组件独立
         }
-        utils.updateSourceCode();
+        PluginCache.sourseCodeUtils.updateSourceCode();
         canvasPanel.revalidate();
         canvasPanel.repaint();
         //System.out.println("已粘贴 " + copiedComponents.size() + " 个组件");
@@ -760,7 +736,7 @@ public class VisualLayoutPanel {
         copiedComponents.clear();
         for (JLayeredPane component : selectedComponents) {
             String id = (String) component.getClientProperty("id");
-            ComponentInfo info = PluginCache.componentInfoMap.get(utils.getComponentId(id));
+            ComponentInfo info = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(id));
             if (info != null) {
                 ComponentInfo copiedInfo = new ComponentInfo(id, info.getName(), info.getX(), info.getY(),info.getType());
                 copiedComponents.add(copiedInfo);
@@ -940,7 +916,7 @@ public class VisualLayoutPanel {
                         String id = (String) layeredPane.getClientProperty("id");
                         updateComponentPosition(id, layeredPane.getLocation());
                     }
-                    utils.updateSourceCode();
+                    PluginCache.sourseCodeUtils.updateSourceCode();
                 }
                 dragStart = null;
                 dragEnd = null;
@@ -1089,7 +1065,7 @@ public class VisualLayoutPanel {
                 // 处理连接线标签编辑
                 String newLabel = editingTextField.getText();
                 editingConnection.label = newLabel;
-                utils.updateSourceCode();
+                PluginCache.sourseCodeUtils.updateSourceCode();
                 canvasPanel.remove(editingTextField);
                 editingTextField = null;
                 editingConnection = null;
@@ -1115,7 +1091,7 @@ public class VisualLayoutPanel {
                     editingTextField = null;
 
                     // 更新源代码
-                    utils.updateSourceCode();
+                    PluginCache.sourseCodeUtils.updateSourceCode();
 
                     // 只重绘父面板
                     parentPane.repaint();
@@ -1125,8 +1101,8 @@ public class VisualLayoutPanel {
     }
 
     private void createNewConnection(JLayeredPane startComponent, JLayeredPane endComponent) {
-        ComponentInfo startInfo = PluginCache.componentInfoMap.get(utils.getComponentId(String.valueOf(startComponent.getClientProperty("id"))));
-        ComponentInfo endInfo = PluginCache.componentInfoMap.get(utils.getComponentId(String.valueOf(endComponent.getClientProperty("id"))));
+        ComponentInfo startInfo = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(String.valueOf(startComponent.getClientProperty("id"))));
+        ComponentInfo endInfo = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(String.valueOf(endComponent.getClientProperty("id"))));
 
         // 判断组件类型和连接规则
         if (!isValidConnection(startInfo, endInfo)) {
@@ -1139,7 +1115,7 @@ public class VisualLayoutPanel {
 
         Connection connection = new Connection(startInfo, endInfo, startPoint, endPoint);
         connections.add(connection);
-        utils.updateSourceCode();
+        PluginCache.sourseCodeUtils.updateSourceCode();
         canvasPanel.repaint();
     }
 
@@ -1435,7 +1411,7 @@ public class VisualLayoutPanel {
         deleteItem.setIcon(IconLoader.getIcon("/icons/delete.svg", VisualLayoutPanel.class));
         deleteItem.addActionListener(e -> {
             connections.remove(connection);
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
             canvasPanel.repaint();
         });
 
@@ -1462,7 +1438,7 @@ public class VisualLayoutPanel {
         if (dialog.showAndGet()) {
             connection.setExpression(dialog.getExpression());
             connection.setExpressionLanguage(dialog.getLanguage());
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
             // 立即重绘画布以显示新的连接线颜色
             canvasPanel.repaint();
         }
@@ -1517,7 +1493,7 @@ public class VisualLayoutPanel {
         popupMenu.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
 
         String id = (String) layeredPane.getClientProperty("id");
-        ComponentInfo info = PluginCache.componentInfoMap.get(utils.getComponentId(id));
+        ComponentInfo info = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(id));
 
         JMenuItem editItem = new JMenuItem("编辑节点");
         editItem.setFont(new Font("微软雅黑", Font.PLAIN, 14));
@@ -1541,7 +1517,7 @@ public class VisualLayoutPanel {
             } else {
                 // 如果没有选中的节点,则只删除当前右键的节点
                 deleteNode(layeredPane);
-                utils.updateSourceCode();
+                PluginCache.sourseCodeUtils.updateSourceCode();
                 canvasPanel.revalidate();
                 canvasPanel.repaint();
             }
@@ -1604,7 +1580,7 @@ public class VisualLayoutPanel {
     // 添加新的方法来复制节点
     private void copyNode(JLayeredPane originalLayeredPane) {
         String originalId = (String) originalLayeredPane.getClientProperty("id");
-        ComponentInfo originalInfo = PluginCache.componentInfoMap.get(utils.getComponentId(originalId));
+        ComponentInfo originalInfo = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(originalId));
         //将原始节点信息复制到新的节点
         ComponentInfo cloneObj = deepClone(originalInfo);
 
@@ -1612,7 +1588,7 @@ public class VisualLayoutPanel {
             // 创建新的唯一ID
             String newId = UUID.randomUUID().toString();
             cloneObj.setId(newId);
-            PluginCache.componentInfoMap.put(utils.getComponentId(newId), cloneObj);
+            PluginCache.componentInfoMap.put(PluginCache.sourseCodeUtils.getComponentId(newId), cloneObj);
             // 创建新的位置（稍微偏移一点，以用户能看到新节点）
             Point newLocation = new Point(originalInfo.getX() + 20, originalInfo.getY() + 20);
 
@@ -1627,7 +1603,7 @@ public class VisualLayoutPanel {
             addComponent(newItem, newLocation, newId,false);
 
             // 更新源代码
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
 
             // 重绘画布
             canvasPanel.revalidate();
@@ -1661,18 +1637,18 @@ public class VisualLayoutPanel {
         if(newInfo != null){ //复制组件
             newInfo.setX(location.x);
             newInfo.setY(location.y);
-            PluginCache.componentInfoMap.put(utils.getComponentId(id), newInfo);
+            PluginCache.componentInfoMap.put(PluginCache.sourseCodeUtils.getComponentId(id), newInfo);
 
         }else{ //拖拽新增组件, 只有一些基本属性
             newInfo = new ComponentInfo(id, item.getName(), location.x, location.y,item.getType());
             newInfo = initNewComponentInfo(newInfo);
             // 不设置相当于没有任何作用
-            PluginCache.componentInfoMap.put(utils.getComponentId(id), newInfo);
+            PluginCache.componentInfoMap.put(PluginCache.sourseCodeUtils.getComponentId(id), newInfo);
         }
         components.add(newInfo);
         System.out.println("组件已添加到画布: ID = " + id + ", 位置 = " + location);
 
-        ApplicationManager.getApplication().invokeLater(utils::updateSourceCode);
+        ApplicationManager.getApplication().invokeLater(PluginCache.sourseCodeUtils::updateSourceCode);
         canvasPanel.revalidate();
         canvasPanel.repaint();
     }
@@ -1766,7 +1742,7 @@ public class VisualLayoutPanel {
                 deleteNode(component);
             }
             selectedComponents.clear();
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
             canvasPanel.revalidate();
             canvasPanel.repaint();
             System.out.println("节点删除完成");
@@ -1803,78 +1779,78 @@ public class VisualLayoutPanel {
         }
 
         String id = (String) layeredPane.getClientProperty("id");
-        ComponentInfo info = PluginCache.componentInfoMap.get(utils.getComponentId(id));
+        ComponentInfo info = PluginCache.componentInfoMap.get(PluginCache.sourseCodeUtils.getComponentId(id));
         
 
         //打印组件
         if (info != null && "flow-print".equals(info.getType())) {
-            PrintComponentSettingsDialog dialog = new PrintComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
+            PrintComponentSettingsDialog dialog = new PrintComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
             dialog.setModal(false); // 设置为非模态
             dialog.show();
         }
         if (info != null && "flow-assign".equals(info.getType())) {
-            AssignComponentSettingsDialog dialog = new AssignComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
+            AssignComponentSettingsDialog dialog = new AssignComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-sql".equals(info.getType())) {
-            SQLComponentSettingsDialog dialog = new SQLComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
+            SQLComponentSettingsDialog dialog = new SQLComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel, info.getType(), currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-groovy".equals(info.getType())) {
-            GroovyComponentSettingsDialog dialog = new GroovyComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            GroovyComponentSettingsDialog dialog = new GroovyComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-date".equals(info.getType())) {
-            DateComponentSettingsDialog dialog = new DateComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            DateComponentSettingsDialog dialog = new DateComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-base64".equals(info.getType())) {
-            Base64ComponentSettingsDialog dialog = new Base64ComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            Base64ComponentSettingsDialog dialog = new Base64ComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-number".equals(info.getType())) {
-            NumberComponentSettingsDialog dialog = new NumberComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            NumberComponentSettingsDialog dialog = new NumberComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-type2type".equals(info.getType())) {
-            Type2TypeComponentSettingsDialog dialog = new Type2TypeComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            Type2TypeComponentSettingsDialog dialog = new Type2TypeComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-random".equals(info.getType())) {
-            RandomComponentSettingsDialog dialog = new RandomComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            RandomComponentSettingsDialog dialog = new RandomComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-uniqueId".equals(info.getType())) {
-            UniqueIdComponentSettingsDialog dialog = new UniqueIdComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            UniqueIdComponentSettingsDialog dialog = new UniqueIdComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-sys_config".equals(info.getType())) {
-            SysConfigComponentSettingsDialog dialog = new SysConfigComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            SysConfigComponentSettingsDialog dialog = new SysConfigComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-custom-refer".equals(info.getType())) {
-            CustomReferComponentSettingsDialog dialog = new CustomReferComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            CustomReferComponentSettingsDialog dialog = new CustomReferComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         if (info != null && "flow-exception".equals(info.getType())) {
-            ExceptionComponentSettingsDialog dialog = new ExceptionComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            ExceptionComponentSettingsDialog dialog = new ExceptionComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile);
             dialog.setModal(false);
             dialog.show();
         }
         //针对于自定义组件, 则统一规则
         if (info != null && info.getType().startsWith("custom-")) {
-            CustomComponentSettingsDialog dialog = new CustomComponentSettingsDialog(id, utils.getComponentId(id), project, canvasPanel,info.getType(),currentFile, info.getName());
+            CustomComponentSettingsDialog dialog = new CustomComponentSettingsDialog(id, PluginCache.sourseCodeUtils.getComponentId(id), project, canvasPanel,info.getType(),currentFile, info.getName());
             dialog.setModal(false);
             dialog.show();
         }
@@ -2005,7 +1981,7 @@ public class VisualLayoutPanel {
     private void addSaveEvent(JToggleButton button){
         //全局保存
         button.addActionListener(e -> {
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
             AlertUtils.alertOnAbove(button,"保存流程成功");
             ToggleButtonUtils.reset(button);
         });
@@ -2255,7 +2231,7 @@ public class VisualLayoutPanel {
             clearCanvas();
             
             // 使用 utils 解析新的内容并渲染
-            utils.loadComponentsFromSource(demoContent);
+            PluginCache.sourseCodeUtils.loadComponentsFromSource(demoContent);
             
             // 重新布局和绘制
             canvasPanel.revalidate();
@@ -2265,7 +2241,7 @@ public class VisualLayoutPanel {
             expandAll(true);
             
             // 更新源代码
-            utils.updateSourceCode();
+            PluginCache.sourseCodeUtils.updateSourceCode();
             
         } catch (Exception e) {
             Messages.showErrorDialog(
