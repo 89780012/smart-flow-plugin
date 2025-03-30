@@ -14,10 +14,12 @@ import com.smart.cache.PluginCache;
 import com.smart.dialog.*;
 import com.smart.enums.ReturnType;
 import com.smart.enums.ThreadType;
+import com.smart.listener.MouseOverBtnAdapter;
 import com.smart.tasks.AsyncTaskManager;
+import com.smart.utils.AlertUtils;
 import com.smart.utils.IconUtils;
 import com.smart.utils.SourseCodeUtils;
-import org.apache.maven.model.Plugin;
+import com.smart.utils.ToggleButtonUtils;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
@@ -95,10 +97,6 @@ public class VisualLayoutPanel {
 
     public interface ComponentSelectionListener {
         void onComponentSelected(String componentId);
-    }
-
-    public VirtualFile getCurrentFile(){
-        return this.currentFile;
     }
 
     public SourseCodeUtils getUtils(){
@@ -1985,21 +1983,37 @@ public class VisualLayoutPanel {
         innerToolbar.add(selectButton);
         innerToolbar.add(Box.createVerticalStrut(4));
         innerToolbar.add(miniMapButton);  // 添加小地图按钮
-
+        innerToolbar.add(Box.createVerticalStrut(4));
         //存档工具
         JToggleButton cunDangButton =  createCunDangButton();
-        innerToolbar.add(cunDangButton);  // 添加小地图按钮
+        innerToolbar.add(cunDangButton);  // 添加存档按钮
+        innerToolbar.add(Box.createVerticalStrut(4));
 
+        //=======================保存按钮===========================
+        Icon icon = IconLoader.getIcon("/icons/save.svg", VisualLayoutPanel.class);
+        JToggleButton saveButton = ToggleButtonUtils.createToggleButtonNoText("保存", icon);
+        innerToolbar.add(saveButton);
+        addSaveEvent(saveButton);
+        //=======================保存按钮===========================
         // 将内部工具栏添加到主工具栏
         toolbar.add(innerToolbar);
-
         // 添加底部弹性空间实现垂直居中
         toolbar.add(Box.createVerticalGlue());
-
         // 设置工具栏的首选大小
         toolbar.setPreferredSize(new Dimension(56, toolbar.getPreferredSize().height));
 
         return toolbar;
+    }
+
+    private void addSaveEvent(JToggleButton button){
+        //全局保存
+        button.addActionListener(e -> {
+            utils.updateSourceCode();
+            AlertUtils.alertOnAbove(button,"保存流程成功");
+            ToggleButtonUtils.reset(button);
+        });
+        // 添加鼠标悬停效果
+        button.addMouseListener(new MouseOverBtnAdapter(button));
     }
 
     // 自定义阴影边框类
@@ -2028,36 +2042,9 @@ public class VisualLayoutPanel {
             return new Insets(3, 3, 3, 3);
         }
     }
-
     private JToggleButton createToolButton(String iconPath, String tooltip, String tool) {
         Icon icon = IconLoader.getIcon(iconPath, VisualLayoutPanel.class);
-        // 使用JToggleButton替代JButton
-        JToggleButton button = new JToggleButton();
-        button.setUI(new CustomCanvasButtonUI());
-        button.setIcon(icon);
-        button.setToolTipText(tooltip);
-
-        // 确保按钮不显示任何文本
-        button.setText("");
-        button.setHorizontalTextPosition(SwingConstants.CENTER);
-        button.setVerticalTextPosition(SwingConstants.CENTER);
-
-        // 设置按钮大小和外观
-        button.setPreferredSize(new Dimension(40, 40));
-        button.setMaximumSize(new Dimension(40, 40));
-        button.setMinimumSize(new Dimension(40, 40));
-
-        // 移除所有默认的按钮装饰
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setOpaque(true);
-        button.setMargin(new Insets(0, 0, 0, 0));
-
-        // 设置按钮样式
-        button.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-        button.setBackground(null);
-
+        JToggleButton button = ToggleButtonUtils.createToggleButtonNoText(tooltip, icon);
         // 修改点击效果处理
         button.addActionListener(e -> {
             if (selectedButton != null && selectedButton != button) {
@@ -2096,23 +2083,7 @@ public class VisualLayoutPanel {
         });
 
         // 添加鼠标悬停效果
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!button.isSelected()) {
-                    button.setBackground(new Color(0, 120, 215, 10));
-                    button.setBorder(new RoundedBorder(4, new Color(0, 120, 215, 20)));
-                }
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!button.isSelected()) {
-                    button.setBackground(new Color(255, 255, 255, 0));
-                    button.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-                }
-            }
-        });
+        button.addMouseListener(new MouseOverBtnAdapter(button));
 
         return button;
     }
@@ -2230,7 +2201,7 @@ public class VisualLayoutPanel {
     private JToggleButton createCunDangButton() {
         cunDangButton = new JToggleButton();
         cunDangButton.setUI(new CustomCanvasButtonUI());
-        Icon icon = IconLoader.getIcon("/icons/save.svg", VisualLayoutPanel.class);
+        Icon icon = IconLoader.getIcon("/icons/cundang.svg", VisualLayoutPanel.class);
         cunDangButton.setIcon(icon);
         cunDangButton.setFocusPainted(false);
         cunDangButton.addActionListener(e -> {
@@ -2247,24 +2218,7 @@ public class VisualLayoutPanel {
         cunDangButton.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         cunDangButton.setBackground(null);
 
-        // 鼠标悬停效果保持不变...
-        cunDangButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!cunDangButton.isSelected()) {
-                    cunDangButton.setBackground(new Color(0, 120, 215, 10));
-                    cunDangButton.setBorder(new RoundedBorder(4, new Color(0, 120, 215, 20)));
-                }
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!cunDangButton.isSelected()) {
-                    cunDangButton.setBackground(new Color(255, 255, 255, 0));
-                    cunDangButton.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-                }
-            }
-        });
+        cunDangButton.addMouseListener(new MouseOverBtnAdapter(cunDangButton));
 
         return cunDangButton;
     }

@@ -13,7 +13,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.Map;
 import com.intellij.ide.util.PropertiesComponent;
-import com.smart.utils.TabButtonUtils;
+import com.smart.utils.ToggleButtonUtils;
 
 public class SidebarPanel extends JPanel {
     private static final String SIDEBAR_WIDTH_KEY = "smart.sidebar.width";
@@ -166,7 +166,7 @@ public class SidebarPanel extends JPanel {
     }
 
     private JToggleButton createTabButton(String tooltip, Icon icon, boolean selected) {
-        JToggleButton button = TabButtonUtils.createTabButton(tooltip,icon,selected);
+        JToggleButton button = ToggleButtonUtils.createToggleButton(tooltip,icon,selected);
         // 重构点击事件处理
         button.addActionListener(e -> {
             if (selectedButton == button) {

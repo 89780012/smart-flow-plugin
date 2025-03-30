@@ -1,7 +1,6 @@
 package com.smart;
 
 import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorLocation;
@@ -35,7 +34,7 @@ import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
-import com.smart.utils.TabButtonUtils;
+import com.smart.utils.ToggleButtonUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -179,7 +178,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
 
     private JToggleButton createTabButton(String tooltip, Icon icon, boolean selected) {
 
-        JToggleButton button = TabButtonUtils.createTabButton(tooltip,icon,selected);
+        JToggleButton button = ToggleButtonUtils.createToggleButton(tooltip,icon,selected);
         // 添加击事件
         button.addActionListener(e -> {
             boolean isSelected = button.isSelected();
