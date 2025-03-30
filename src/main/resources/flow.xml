@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smart-flow>
+    <!-- 数据源配置 -->
+    <dataSources>
+        <!-- 默认数据源配置 -->
+        <dataSource id="default" type="mysql">
+            <property name="driverClassName">com.mysql.cj.jdbc.Driver</property>
+            <property name="url">jdbc:mysql://localhost:3306/test?useUnicode=true&amp;characterEncoding=utf8&amp;serverTimezone=Asia/Shanghai</property>
+            <property name="username">root</property>
+            <property name="password">123456</property>
+        </dataSource>
+
+        <!-- 业务数据源配置示例 -->
+        <dataSource id="business" type="mysql">
+            <property name="driverClassName">com.mysql.cj.jdbc.Driver</property>
+            <property name="url">jdbc:mysql://localhost:3306/business?useUnicode=true&amp;characterEncoding=utf8&amp;serverTimezone=Asia/Shanghai</property>
+            <property name="username">business_user</property>
+            <property name="password">business_pwd</property>
+        </dataSource>
+
+        <!-- Oracle数据源配置示例 -->
+        <dataSource id="oracle" type="oracle">
+            <property name="driverClassName">oracle.jdbc.driver.OracleDriver</property>
+            <property name="url">jdbc:oracle:thin:@localhost:1521:orcl</property>
+            <property name="username">system</property>
+            <property name="password">oracle</property>
+        </dataSource>
+    </dataSources>
+
+    <!-- 全局配置 -->
+    <settings>
+        <!-- 默认数据源 -->
+        <property name="defaultDataSource">default</property>
+        <!-- 日志级别: debug/info/warn/error -->
+        <property name="logLevel">info</property>
+    </settings>
+
+    <!-- SFTP配置示例 -->
+    <sftp>
+        <server id="sftp1">
+            <property name="host">192.168.1.100</property>
+            <property name="port">22</property>
+            <property name="username">sftp_user</property>
+            <property name="password">sftp_pwd</property>
+            <property name="rootPath">/data/files</property>
+        </server>
+    </sftp>
+
+    <!-- Redis配置示例 -->
+    <redis>
+        <server id="redis1">
+            <property name="host">localhost</property>
+            <property name="port">6379</property>
+            <property name="password">redis_pwd</property>
+            <property name="database">0</property>
+        </server>
+    </redis>
+
+    <!-- 邮件服务配置示例 -->
+    <mail id="mailServer">
+        <property name="host">smtp.example.com</property>
+        <property name="port">25</property>
+        <property name="username">mail@example.com</property>
+        <property name="password">mail_pwd</property>
+        <property name="defaultFrom">system@example.com</property>
+    </mail>
+</smart-flow>
