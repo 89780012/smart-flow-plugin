@@ -162,7 +162,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
         SourseCodeUtils sourseCodeUtils = new SourseCodeUtils(file, propertyMap);
         sourseCodeUtils.initVPanel(visualLayoutPanel);
         sourseCodeUtils.loadComponentsFromSource();
-        PluginCache.sourseCodeUtils = sourseCodeUtils;
+        PluginCache.sourceCodeUtilMap.put(file.getPath(),sourseCodeUtils);
         return sourseCodeUtils;
     }
 
@@ -767,7 +767,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
     public void dispose() {
         // 解绑UI事件
         if (visualLayoutPanel != null && file != null) {
-            PluginCache.sourseCodeUtils.unregisterUIEvent(file.getPath());
+            PluginCache.sourceCodeUtilMap.get(file.getPath()).unregisterUIEvent(file.getPath());
         }
         if (visualLayoutPanel != null) {
             visualLayoutPanel.dispose();
@@ -1101,7 +1101,7 @@ public class BizFileEditor extends UserDataHolderBase implements FileEditor {
                         FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
                         
                         //刷新文件
-                        PluginCache.sourseCodeUtils.loadComponentsFromSource();
+                        PluginCache.sourceCodeUtilMap.get(file.getPath()).loadComponentsFromSource();
 
                         // 在下一个 EDT 周期中恢复状态
                         ApplicationManager.getApplication().invokeLater(() -> {

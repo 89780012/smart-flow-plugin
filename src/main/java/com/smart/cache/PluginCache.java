@@ -37,18 +37,15 @@ public class PluginCache {
     //存档按钮
     public static JToggleButton archiveTab;
 
-    public static SourseCodeUtils sourseCodeUtils;
+
+    //filePath: SourceCodeUtils
+    public static Map<String, SourseCodeUtils> sourceCodeUtilMap = new ConcurrentHashMap<String,SourseCodeUtils>();
 
     //远程存储
     public static boolean enableRemoteStorage = false;
 
     // 在类中添加新字段
     public static List<String> availableModels;
-
-    public static List<String> sqlContents = new ArrayList<>();
-
-    //开启sql分析
-    public static boolean enableSqlAiAnalysis = false;
 
 
     public static void updateGlobalBizId(String oldBizId, String newBizId) {
@@ -69,5 +66,4 @@ public class PluginCache {
 
     public static String currentModel="默认模式";
 
-    public static String dbCache = ""; //数据库表结构缓存
 }
