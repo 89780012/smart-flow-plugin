@@ -110,6 +110,16 @@
             <icon>/icons/groovy.svg</icon>
         </item>
         <item>
+            <name>文件上传</name>
+            <type>flow-file-upload</type>
+            <icon>/icons/file_upload.svg</icon>
+        </item>
+        <item>
+            <name>HTTP请求</name>
+            <type>flow-http</type>
+            <icon>/icons/HTTP.svg</icon>
+        </item>
+        <item>
             <name>自定义引用</name>
             <type>flow-custom-refer</type>
             <icon>/icons/biz.svg</icon>
