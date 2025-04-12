@@ -1533,7 +1533,8 @@ public class VisualLayoutPanel {
                 || "flow-date".equals(info.getType()) || "flow-base64".equals(info.getType()) || "flow-number".equals(info.getType())
                 || "flow-random".equals(info.getType()) || "flow-uniqueId".equals(info.getType()) || "flow-sys_config".equals(info.getType())
                 || "flow-custom-refer".equals(info.getType()) || "flow-exception".equals(info.getType()) || "flow-groovy".equals(info.getType())
-                || "flow-type2type".equals(info.getType()) || info.getType().startsWith("custom-") )) {
+                || "flow-type2type".equals(info.getType()) || "flow-file-upload".equals(info.getType()) || "flow-http".equals(info.getType())
+                || info.getType().startsWith("custom-") )) {
             JMenuItem configItem = new JMenuItem("组件配置");
             configItem.setFont(new Font("微软雅黑", Font.PLAIN, 14));
             configItem.setIcon(IconLoader.getIcon("/icons/settings.svg", VisualLayoutPanel.class));
@@ -1786,7 +1787,6 @@ public class VisualLayoutPanel {
         String id = (String) layeredPane.getClientProperty("id");
         ComponentInfo info = PluginCache.componentInfoMap.get(getSourceCodeUtil().getComponentId(id));
 
-
         //打印组件
         if (info != null && "flow-print".equals(info.getType())) {
             PrintComponentSettingsDialog dialog = new PrintComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel, info.getType(), currentFile);
@@ -1853,6 +1853,20 @@ public class VisualLayoutPanel {
             dialog.setModal(false);
             dialog.show();
         }
+        
+        if (info != null && "flow-file-upload".equals(info.getType())) {
+            FileUploadComponentSettingsDialog dialog = new FileUploadComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            dialog.setModal(false);
+            dialog.show();
+        }
+
+//        if (info != null && "flow-http".equals(info.getType())) {
+//            HttpComponentSettingsDialog dialog = new HttpComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+//            dialog.setModal(false);
+//            dialog.show();
+//        }
+        
+
         //针对于自定义组件, 则统一规则
         if (info != null && info.getType().startsWith("custom-")) {
             CustomComponentSettingsDialog dialog = new CustomComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel,info.getType(),currentFile, info.getName());

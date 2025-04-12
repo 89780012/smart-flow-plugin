@@ -27,6 +27,13 @@
         </dataSource>
     </dataSources>
 
+    <fileUploads>
+        <fileUpload id="local" name="本地" type="local">
+            <!-- 文件上传路径 -->
+            <property name="path">/</property>
+        </fileUpload>
+    </fileUploads>
+
     <!-- 全局配置 -->
     <settings>
         <!-- 默认数据源 -->

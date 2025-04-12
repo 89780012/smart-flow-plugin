@@ -14,7 +14,6 @@ public class ComponentConfigPanel extends JPanel {
     private final String componentId;
     private final Project project;
     private final JPanel canvasPanel;
-    private JPanel configContent;
     private CommonDialog currentDialog;
     private VirtualFile virtualFile;
     private String bizId;
@@ -177,6 +176,18 @@ public class ComponentConfigPanel extends JPanel {
                 currentDialog = dialogException;
                 panel = dialogException.createCenterPanel();
                 break;
+            case "flow-file-upload":
+                FileUploadComponentSettingsDialog dialogFileUpload = new FileUploadComponentSettingsDialog(
+                    componentId, getCacheComponentId(componentId), project, canvasPanel, "flow-file-upload",this.virtualFile);
+                currentDialog = dialogFileUpload;
+                panel = dialogFileUpload.createConfigurationPanel();
+                break;
+//            case "flow-http":
+//                HttpComponentSettingsDialog dialogHttp = new HttpComponentSettingsDialog(
+//                    componentId, getCacheComponentId(componentId), project, canvasPanel, "flow-http",this.virtualFile);
+//                currentDialog = dialogHttp;
+//                panel = dialogHttp.createConfigurationPanel();
+//                break;
             default:
                 currentDialog = null;
                 return null;

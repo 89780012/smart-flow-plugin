@@ -113,11 +113,17 @@
             <name>文件上传</name>
             <type>flow-file-upload</type>
             <icon>/icons/file_upload.svg</icon>
+            <isBeanEdit>false</isBeanEdit>
+            <beanRef>flow-file-upload</beanRef>
+            <method>cc.xiaonuo.flow.method.FlowFileUpload#exec</method>
         </item>
         <item>
             <name>HTTP请求</name>
             <type>flow-http</type>
             <icon>/icons/HTTP.svg</icon>
+            <isBeanEdit>false</isBeanEdit>
+            <beanRef>flow-http</beanRef>
+            <method>cc.xiaonuo.flow.method.FlowHttp#exec</method>
         </item>
         <item>
             <name>自定义引用</name>
