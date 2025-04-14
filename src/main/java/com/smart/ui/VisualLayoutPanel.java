@@ -1860,11 +1860,11 @@ public class VisualLayoutPanel {
             dialog.show();
         }
 
-//        if (info != null && "flow-http".equals(info.getType())) {
-//            HttpComponentSettingsDialog dialog = new HttpComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel,info.getType(),currentFile);
-//            dialog.setModal(false);
-//            dialog.show();
-//        }
+        if (info != null && "flow-http".equals(info.getType())) {
+            HttpComponentSettingsDialog dialog = new HttpComponentSettingsDialog(id, getSourceCodeUtil().getComponentId(id), project, canvasPanel,info.getType(),currentFile);
+            dialog.setModal(false);
+            dialog.show();
+        }
         
 
         //针对于自定义组件, 则统一规则

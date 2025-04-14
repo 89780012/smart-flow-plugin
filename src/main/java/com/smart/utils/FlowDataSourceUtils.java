@@ -64,8 +64,8 @@ public class FlowDataSourceUtils {
         return fileUploadConfigs;
     }
 
-    // 获取flow.xml文件
-    private static File findFlowXmlFile(Project project, VirtualFile file) {
+    // 获取flow.xml文件 - 公开此方法使其可被其他类调用
+    public static File findFlowXmlFile(Project project, VirtualFile file) {
         File configFile = null;
         try {
             // 获取当前文件所在的模块

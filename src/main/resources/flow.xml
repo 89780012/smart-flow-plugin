@@ -34,6 +34,11 @@
         </fileUpload>
     </fileUploads>
 
+    <!-- HTTP请求 -->
+    <https>
+        <http id="sm" name="算法总线">http://127.0.0.1/api</http>
+    </https>
+
     <!-- 全局配置 -->
     <settings>
         <!-- 默认数据源 -->
